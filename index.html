@@ -947,7 +947,7 @@ function addFeedEvent() {
   if (feedItems.length > 20) feedItems.pop();
   renderFeed();
 }
-setInterval(addFeedEvent, 17000);
+//setInterval(addFeedEvent, 17000);
 
 // ── LIVE ZONE SIMULATION ──
 const zoneState = { A:{active:false,timer:0,interval:null}, B:{active:false,timer:0,interval:null}, C:{active:false,timer:0,interval:null} };
@@ -991,7 +991,7 @@ function triggerRandomZone() {
   if (!zoneState[z].active) setZoneActive(z);
 }
 setZoneActive('A');
-setInterval(triggerRandomZone, 11000);
+//setInterval(triggerRandomZone, 11000);
 
 // ── ANALYTICS PAGE ──
 let hourlyChart=null, trendChart=null, zoneHourlyChart=null, zonePieChart=null;
