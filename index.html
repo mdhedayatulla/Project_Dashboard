@@ -751,6 +751,82 @@
 </main>
 
 <script>
+  // ── CLOUD API INTEGRATION ──────────────────────────
+const API_BASE = 'https://jewsu7qmc2.execute-api.us-east-1.amazonaws.com/prod';
+// Replace with your actual API Gateway invoke URL
+
+async function loadCloudData() {
+  try {
+    // Fetch summary
+    const summaryRes  = await fetch(`${API_BASE}/summary`);
+    const summaryData = await summaryRes.json();
+
+    if (summaryData.summary) {
+      const summary = summaryData.summary;
+
+      // Calculate totals
+      const totalSessions    = summary.reduce((a,b) => a + b.totalSessions, 0);
+      const totalHesitations = summary.reduce((a,b) => a + b.hesitationCount, 0);
+      const totalConversions = summary.reduce((a,b) => a + b.conversionCount, 0);
+      const overallConvRate  = totalSessions > 0
+        ? (totalConversions / totalSessions * 100).toFixed(1) : 0;
+
+      // Update top stat cards
+      const sessEl = document.getElementById('stat-sessions');
+      if (sessEl) sessEl.textContent = totalSessions;
+
+      // Update zone cards
+      summary.forEach(zone => {
+        const z = zone.zoneId.replace('ZONE_', '');
+
+        const sessZ  = document.getElementById(`zsess-${z}`);
+        const hesZ   = document.getElementById(`zhes-${z}`);
+        const convZ  = document.getElementById(`zconv-${z}`);
+        const hrateZ = document.getElementById(`zhrate${z}`); // matches your HTML id
+        const hbarZ  = document.getElementById(`zhbar-${z}`);
+
+        if (sessZ)  sessZ.textContent  = zone.totalSessions;
+        if (hesZ)   hesZ.textContent   = zone.hesitationCount;
+        if (convZ)  convZ.textContent  = zone.conversionCount;
+        if (hrateZ) hrateZ.textContent = zone.hesitationRate + '%';
+
+        if (hbarZ) {
+          hbarZ.style.width      = zone.hesitationRate + '%';
+          hbarZ.style.background =
+            zone.hesitationRate > 40 ? 'var(--red)' :
+            zone.hesitationRate > 25 ? 'var(--amber)' : 'var(--green)';
+        }
+      });
+    }
+
+    // Fetch feed
+    const feedRes  = await fetch(`${API_BASE}/feed`);
+    const feedData = await feedRes.json();
+
+    if (feedData.feed && feedData.feed.length > 0) {
+      // Replace feedItems with real data
+      feedItems = feedData.feed.map(ev => ({
+        time:  ev.time,
+        zone:  ev.zone.replace('ZONE_', 'Zone '),
+        beh:   ev.behavior,
+        dwell: ev.dwellTime,
+        int:   ev.interactions
+      }));
+      renderFeed();
+    }
+
+    console.log('Cloud data loaded successfully');
+
+  } catch(e) {
+    console.warn('Cloud fetch failed, using dummy data:', e);
+  }
+}
+
+// Load on startup, refresh every 15 seconds
+window.addEventListener('load', () => {
+  loadCloudData();
+  setInterval(loadCloudData, 15000);
+});
 // ── DUMMY DATA ──
 const zoneData = {
   A: { name:"Zone A", cat:"Snacks", sessions:47, hes:12, conv:19, hesRate:25.5, convRate:40.4, avgDwell:18.3, avgInt:3.1 },
