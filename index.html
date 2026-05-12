@@ -829,9 +829,9 @@ window.addEventListener('load', () => {
 });
 // ── DUMMY DATA ──
 const zoneData = {
-  A: { name:"Zone A", cat:"Snacks", sessions:47, hes:12, conv:19, hesRate:25.5, convRate:40.4, avgDwell:18.3, avgInt:3.1 },
-  B: { name:"Zone B", cat:"Beverages", sessions:63, hes:29, conv:18, hesRate:46.0, convRate:28.6, avgDwell:24.7, avgInt:4.8 },
-  C: { name:"Zone C", cat:"Chocolates", sessions:38, hes:8, conv:22, hesRate:21.1, convRate:57.9, avgDwell:12.1, avgInt:2.3 }
+  A: { name:"Zone A", cat:"Snacks", sessions:0, hes:0, conv:0, hesRate:0, convRate:0, avgDwell:0, avgInt:0 },
+  B: { name:"Zone B", cat:"Beverages", sessions:0, hes:0, conv:0, hesRate:0, convRate:0, avgDwell:0, avgInt:0 },
+  C: { name:"Zone C", cat:"Chocolates", sessions:0, hes:0, conv:0, hesRate:0, convRate:0, avgDwell:0, avgInt:0 }
 };
 
 const hourlyData = [
@@ -905,7 +905,7 @@ document.querySelectorAll('.nav-item').forEach(el => {
 
 // ── ACTIVITY FEED ──
 let feedItems = [
-  { time:"18:42", zone:"Zone B", beh:"PROBABLE_HESITATION", dwell:31, int:5 },
+  /*{ time:"18:42", zone:"Zone B", beh:"PROBABLE_HESITATION", dwell:31, int:5 },
   { time:"18:39", zone:"Zone A", beh:"SUCCESSFUL_CONVERSION", dwell:22, int:3 },
   { time:"18:35", zone:"Zone C", beh:"EXPLORATORY_BROWSING", dwell:8, int:1 },
   { time:"18:31", zone:"Zone B", beh:"PROBABLE_HESITATION", dwell:44, int:7 },
@@ -914,7 +914,7 @@ let feedItems = [
   { time:"18:17", zone:"Zone B", beh:"EXPLORATORY_BROWSING", dwell:6, int:1 },
   { time:"18:11", zone:"Zone A", beh:"PROBABLE_HESITATION", dwell:28, int:4 },
   { time:"18:06", zone:"Zone C", beh:"FOCUSED_INTEREST", dwell:19, int:3 },
-  { time:"18:01", zone:"Zone B", beh:"SUCCESSFUL_CONVERSION", dwell:20, int:3 },
+  { time:"18:01", zone:"Zone B", beh:"SUCCESSFUL_CONVERSION", dwell:20, int:3 },*/
 ];
 
 function behaviorShort(b) {
