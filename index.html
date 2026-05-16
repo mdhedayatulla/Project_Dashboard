@@ -509,7 +509,7 @@
         <div class="card-title">Zone Comparison</div>
         <table class="data-table">
           <thead><tr><th>Zone</th><th>Sessions</th><th>Hesitations</th><th>Conversions</th><th>Hesitation Rate</th><th>Conversion Rate</th><th>Avg Dwell</th></tr></thead>
-          <tbody>
+          <tbody id="zone-comparison-body">
             <tr>
               <td><span style="color:var(--cyan);font-family:'JetBrains Mono',monospace">Zone A — Snacks</span></td>
               <td>47</td><td>12</td><td>19</td>
@@ -779,6 +779,13 @@ async function loadCloudData() {
       summary.forEach(zone => {
         const z = zone.zoneId.replace('ZONE_', '');
 
+        zoneData[z].sessions = zone.totalSessions;
+        zoneData[z].hes      = zone.hesitationCount;
+        zoneData[z].conv     = zone.conversionCount;
+        zoneData[z].hesRate  = zone.hesitationRate;
+        zoneData[z].convRate = zone.conversionRate;
+        zoneData[z].avgDwell = zone.avgDwellTime;
+
         const sessZ  = document.getElementById(`zsess-${z}`);
         const hesZ   = document.getElementById(`zhes-${z}`);
         const convZ  = document.getElementById(`zconv-${z}`);
@@ -797,6 +804,8 @@ async function loadCloudData() {
             zone.hesitationRate > 25 ? 'var(--amber)' : 'var(--green)';
         }
       });
+      renderHeatmap(summary);
+      renderComparisonTable(summary);
     }
 
     // Fetch feed
@@ -1092,6 +1101,62 @@ function renderZoneDetail(z) {
     const den = Math.round(ints/dw*100*4.5);
     const b = behs[Math.floor(Math.random()*4)];
     return `<tr><td class="time-mono">${h}:${m}</td><td style="font-family:'JetBrains Mono',monospace">${dw}s</td><td style="font-family:'JetBrains Mono',monospace">${ints}</td><td style="font-family:'JetBrains Mono',monospace">${Math.min(den,99)}%</td><td><span class="beh-badge beh-${b}">${behaviorShort(b)}</span></td></tr>`;
+  }).join('');
+}
+
+function renderHeatmap(summary) {
+    const colorFor = r => r > 40 
+        ? `rgba(239,68,68,0.45)` 
+        : r > 25 
+        ? `rgba(245,158,11,0.35)` 
+        : `rgba(16,185,129,0.30)`;
+    
+    const riskFor = r => r > 40 ? 'HIGH' : r > 25 ? 'MEDIUM' : 'LOW';
+    const riskColorFor = r => r > 40 ? 'var(--red)' : r > 25 ? 'var(--amber)' : 'var(--green)';
+
+    const container = document.querySelector('.shelf-container');
+    if (!container) return;
+
+    container.innerHTML = summary.map(zone => {
+        const z = zone.zoneId.replace('ZONE_', '');
+        const cat = zoneData[z].cat;
+        const r = zone.hesitationRate;
+        return `
+        <div class="shelf-zone" style="background:${colorFor(r)}">
+            <div class="shelf-tooltip">
+                <div class="tt-row"><span>Sessions</span><span class="tt-val">${zone.totalSessions}</span></div>
+                <div class="tt-row"><span>Hesitations</span><span class="tt-val">${zone.hesitationCount}</span></div>
+                <div class="tt-row"><span>Conversion</span><span class="tt-val">${zone.conversionRate}%</span></div>
+                <div class="tt-row"><span>Avg Dwell</span><span class="tt-val">${zone.avgDwellTime}s</span></div>
+            </div>
+            <div class="sz-label">Zone ${z}</div>
+            <div class="sz-cat">${cat}</div>
+            <div class="sz-rate">${r}%</div>
+            <div class="sz-sub">Hesitation Rate</div>
+        </div>`;
+    }).join('');
+}
+
+function renderComparisonTable(summary) {
+  const tbody = document.getElementById('zone-comparison-body');
+  if (!tbody) return;
+
+  tbody.innerHTML = summary.map(zone => {
+    const z = zone.zoneId.replace('ZONE_', '');
+    const cat = zoneData[z].cat;
+    const hrClass = zone.hesitationRate > 40 ? 'rate-high' 
+                  : zone.hesitationRate > 25 ? 'rate-mid' : 'rate-ok';
+    const crClass = zone.conversionRate > 40 ? 'rate-ok' : 'rate-mid';
+
+    return `<tr>
+      <td><span style="color:var(--cyan);font-family:'JetBrains Mono',monospace">Zone ${z} — ${cat}</span></td>
+      <td>${zone.totalSessions}</td>
+      <td>${zone.hesitationCount}</td>
+      <td>${zone.conversionCount}</td>
+      <td><span class="rate-val ${hrClass}">${zone.hesitationRate}%</span></td>
+      <td><span class="rate-val ${crClass}">${zone.conversionRate}%</span></td>
+      <td><span style="font-family:'JetBrains Mono',monospace">${zone.avgDwellTime}s</span></td>
+    </tr>`;
   }).join('');
 }
 
