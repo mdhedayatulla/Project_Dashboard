@@ -366,8 +366,8 @@
           </div>
           <span class="stat-trend trend-down"></span>
         </div>
-        <div class="stat-val" style="color:var(--amber)"></div>
-        <div class="stat-label"></div>
+        <div class="stat-val" style="color:var(--amber)" id="stat-hesitations">5</div>
+        <div class="stat-label">Active Hesitations</div>
       </div>
       <div class="stat-card">
         <div class="stat-top">
@@ -376,8 +376,8 @@
           </div>
           <span class="stat-trend trend-up"></span>
         </div>
-        <div class="stat-val" style="color:var(--green)"></div>
-        <div class="stat-label"></div>
+        <div class="stat-val" style="color:var(--green)" id="stat-convrate">41.2%</div>
+        <div class="stat-label">Overall Conversion Rate</div>
       </div>
       <div class="stat-card">
         <div class="stat-top">
@@ -386,8 +386,8 @@
           </div>
           <span class="stat-trend trend-down"></span>
         </div>
-        <div class="stat-val" style="color:var(--red);font-size:20px"></div>
-        <div class="stat-label"></div>
+        <div class="stat-val" style="color:var(--red);font-size:20px" id="stat-worstzone">Zone A</div>
+        <div class="stat-label">Most Problematic Zone</div>
       </div>
     </div>
 
@@ -774,6 +774,22 @@ async function loadCloudData() {
       // Update top stat cards
       const sessEl = document.getElementById('stat-sessions');
       if (sessEl) sessEl.textContent = totalSessions;
+      
+      const hesEl = document.getElementById('stat-hesitations');
+      if (hesEl) hesEl.textContent = totalHesitations;
+
+      const convRateEl = document.getElementById('stat-convrate');
+      if (convRateEl) convRateEl.textContent = overallConvRate + '%';
+
+      const worst = summary.reduce((a,b) => 
+        a.hesitationRate > b.hesitationRate ? a : b
+      );
+      const worstEl = document.getElementById('stat-worstzone');
+      if (worstEl) worstEl.textContent = 'Zone ' + worst.zoneId.replace('ZONE_', '');
+
+      const worstLabelEl = document.getElementById('stat-worstzone-label');
+      if (worstLabelEl) worstLabelEl.textContent = worst.hesitationRate + '% Hes';
+      
 
       // Update zone cards
       summary.forEach(zone => {
