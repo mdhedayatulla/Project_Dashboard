@@ -886,11 +886,18 @@ const trendData = [
 const behaviors = ["EXPLORATORY_BROWSING","FOCUSED_INTEREST","PROBABLE_HESITATION","SUCCESSFUL_CONVERSION"];
 const zones = ["Zone A","Zone B","Zone C"];
 
-const behaviorDist = {
-  A: [{name:"Conversion",value:19,color:"#10b981"},{name:"Focused",value:14,color:"#3b82f6"},{name:"Hesitation",value:12,color:"#f59e0b"},{name:"Exploratory",value:2,color:"#6366f1"}],
-  B: [{name:"Conversion",value:18,color:"#10b981"},{name:"Focused",value:11,color:"#3b82f6"},{name:"Hesitation",value:29,color:"#f59e0b"},{name:"Exploratory",value:5,color:"#6366f1"}],
-  C: [{name:"Conversion",value:22,color:"#10b981"},{name:"Focused",value:8,color:"#3b82f6"},{name:"Hesitation",value:8,color:"#f59e0b"},{name:"Exploratory",value:0,color:"#6366f1"}],
-};
+function getBehaviorDist(z) {
+    const d = zoneData[z];
+    const explored  = d.sessions - d.hes - d.conv - 
+                     Math.max(0, d.sessions - d.hes - d.conv);
+    const focused   = Math.max(0, d.sessions - d.hes - d.conv);
+    return [
+        { name:'Conversion',  value: d.conv, color:'#10b981' },
+        { name:'Focused',     value: focused, color:'#3b82f6' },
+        { name:'Hesitation',  value: d.hes,  color:'#f59e0b' },
+        { name:'Exploratory', value: Math.max(0, d.sessions - d.conv - d.hes - focused), color:'#6366f1' }
+    ];
+}
 
 const mlInsights = [
   { type:"WARNING", zone:"Zone B", title:"High Hesitation Detected", message:"Zone B (Beverages) has a 46% hesitation rate — highest across all zones. Consider reducing product SKU count or improving shelf signage.", metric:"46% Hesitation Rate" },
@@ -1099,7 +1106,7 @@ function renderZoneDetail(z) {
     });
     if(zonePieChart){zonePieChart.destroy();zonePieChart=null;}
     const ctx2 = document.getElementById('zone-pie-chart').getContext('2d');
-    const dist = behaviorDist[z];
+    const dist = getBehaviorDist(z);
     zonePieChart = new Chart(ctx2,{
       type:'doughnut',
       data:{ labels:dist.map(d=>d.name), datasets:[{data:dist.map(d=>d.value),backgroundColor:dist.map(d=>d.color),borderWidth:2,borderColor:'#111827'}] },
