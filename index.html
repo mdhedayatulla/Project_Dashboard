@@ -1108,17 +1108,7 @@ function renderZoneDetail(z) {
   },50);
 
   // Session table
-  const tbody = document.getElementById('zone-session-body');
-  const behs = ["EXPLORATORY_BROWSING","FOCUSED_INTEREST","PROBABLE_HESITATION","SUCCESSFUL_CONVERSION"];
-  tbody.innerHTML = Array.from({length:10},(_,i)=>{
-    const h = 18-Math.floor(i/2);
-    const m = String(Math.floor(Math.random()*60)).padStart(2,'0');
-    const dw = Math.floor(Math.random()*30)+5;
-    const ints = Math.floor(Math.random()*6)+1;
-    const den = Math.round(ints/dw*100*4.5);
-    const b = behs[Math.floor(Math.random()*4)];
-    return `<tr><td class="time-mono">${h}:${m}</td><td style="font-family:'JetBrains Mono',monospace">${dw}s</td><td style="font-family:'JetBrains Mono',monospace">${ints}</td><td style="font-family:'JetBrains Mono',monospace">${Math.min(den,99)}%</td><td><span class="beh-badge beh-${b}">${behaviorShort(b)}</span></td></tr>`;
-  }).join('');
+  loadZoneSessions(z);
 }
 
 function renderHeatmap(summary) {
@@ -1214,6 +1204,63 @@ function renderRiskCards(summary) {
         </div>`;
     }).join('');
 }
+
+async function loadZoneSessions(z) {
+    const tbody = document.getElementById('zone-session-body');
+    if (!tbody) return;
+
+    // Show loading state
+    tbody.innerHTML = `<tr><td colspan="5" 
+        style="text-align:center;color:var(--text3);font-family:'JetBrains Mono',monospace;padding:20px">
+        Loading sessions...
+    </td></tr>`;
+
+    try {
+        const res  = await fetch(`${API_BASE}/sessions?zoneId=ZONE_${z}`);
+        const data = await res.json();
+        const sessions = data.sessions || [];
+
+        if (sessions.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="5" 
+                style="text-align:center;color:var(--text3);font-family:'JetBrains Mono',monospace;padding:20px">
+                No sessions recorded yet for Zone ${z}
+            </td></tr>`;
+            return;
+        }
+
+        tbody.innerHTML = sessions.slice(0, 10).map(item => {
+            const ts = item.timestamp || '';
+            let timeStr = '';
+            try {
+                timeStr = new Date(ts).toLocaleTimeString('en-GB', {
+                    hour:   '2-digit',
+                    minute: '2-digit'
+                });
+            } catch { timeStr = ts.slice(11, 16); }
+
+            const dwell   = (parseFloat(item.dwellTime || 0) / 1000).toFixed(1);
+            const ints    = item.interactionCount || 0;
+            const density = item.interactionDensity || '0';
+            const beh     = item.cloudTag || 'UNDETERMINED';
+
+            return `<tr>
+                <td class="time-mono">${timeStr}</td>
+                <td style="font-family:'JetBrains Mono',monospace">${dwell}s</td>
+                <td style="font-family:'JetBrains Mono',monospace">${ints}</td>
+                <td style="font-family:'JetBrains Mono',monospace">${parseFloat(density).toFixed(1)}%</td>
+                <td><span class="beh-badge beh-${beh}">${behaviorShort(beh)}</span></td>
+            </tr>`;
+        }).join('');
+
+    } catch(e) {
+        tbody.innerHTML = `<tr><td colspan="5" 
+            style="text-align:center;color:var(--red);font-family:'JetBrains Mono',monospace;padding:20px">
+            Failed to load sessions
+        </td></tr>`;
+        console.warn('Session fetch failed:', e);
+    }
+}
+
 
 // ── ML INSIGHTS ──
 function renderInsights() {
