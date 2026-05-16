@@ -614,7 +614,7 @@
         <span style="margin-left:auto;font-family:'JetBrains Mono',monospace;color:var(--text2)">Hover zones for details</span>
       </div>
     </div>
-    <div class="grid-3">
+    <div class="grid-3" id="risk-cards-container">
       <div class="risk-card">
         <div class="risk-badge risk-MEDIUM">MEDIUM RISK</div>
         <div class="risk-title">Zone A — Snacks</div>
@@ -822,6 +822,7 @@ async function loadCloudData() {
       });
       renderHeatmap(summary);
       renderComparisonTable(summary);
+      renderRiskCards(summary);
     }
 
     // Fetch feed
@@ -1174,6 +1175,44 @@ function renderComparisonTable(summary) {
       <td><span style="font-family:'JetBrains Mono',monospace">${zone.avgDwellTime}s</span></td>
     </tr>`;
   }).join('');
+}
+
+function renderRiskCards(summary) {
+    const container = document.getElementById('risk-cards-container');
+    if (!container) return;
+
+    const riskFor = r => r > 40 ? 'HIGH' : r > 25 ? 'MEDIUM' : 'LOW';
+    const colorFor = r => r > 40 ? 'var(--red)' 
+                        : r > 25 ? 'var(--amber)' 
+                        : 'var(--green)';
+    const concernFor = r => r > 40
+        ? 'High interaction, low conversion suggests decision paralysis. Too many SKUs overwhelming customers.'
+        : r > 25
+        ? 'Moderate hesitation with acceptable conversion. Occasional decision friction observed.'
+        : 'Excellent conversion performance. Shelf arrangement and product visibility are optimal.';
+    const actionFor = r => r > 40
+        ? '→ Reduce SKU count, improve shelf signage and product labels'
+        : r > 25
+        ? '→ Review product placement; consider reducing adjacent SKUs'
+        : '→ Maintain current layout; use as reference for other zones';
+
+    container.innerHTML = summary.map(zone => {
+        const z = zone.zoneId.replace('ZONE_', '');
+        const cat = zoneData[z].cat;
+        const r = zone.hesitationRate;
+        const risk = riskFor(r);
+        return `
+        <div class="risk-card">
+            <div class="risk-badge risk-${risk}">${risk} RISK</div>
+            <div class="risk-title">Zone ${z} — ${cat}</div>
+            <div style="font-family:'JetBrains Mono',monospace;font-size:20px;
+                font-weight:700;color:${colorFor(r)};margin-bottom:8px">
+                ${r}%
+            </div>
+            <div class="risk-concern">${concernFor(r)}</div>
+            <div class="risk-action">${actionFor(r)}</div>
+        </div>`;
+    }).join('');
 }
 
 // ── ML INSIGHTS ──
