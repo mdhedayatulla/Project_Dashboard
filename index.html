@@ -848,10 +848,61 @@ async function loadCloudData() {
   }
 }
 
+async function loadChartData() {
+    try {
+        // Fetch hourly
+        const hourlyRes  = await fetch(`${API_BASE}/hourly`);
+        const hourlyJson = await hourlyRes.json();
+
+        if (hourlyJson.hourly && hourlyJson.hourly.length > 0) {
+            const real = hourlyJson.hourly;
+
+            // Update hourlyData array
+            hourlyData.length = 0;
+            real.forEach(d => hourlyData.push(d));
+
+            // If chart already rendered, update it
+            if (hourlyChart) {
+                hourlyChart.data.labels        = hourlyData.map(d => d.hour);
+                hourlyChart.data.datasets[0].data = hourlyData.map(d => d.A);
+                hourlyChart.data.datasets[1].data = hourlyData.map(d => d.B);
+                hourlyChart.data.datasets[2].data = hourlyData.map(d => d.C);
+                hourlyChart.update();
+            }
+        }
+
+        // Fetch trend
+        const trendRes  = await fetch(`${API_BASE}/trend`);
+        const trendJson = await trendRes.json();
+
+        if (trendJson.trend && trendJson.trend.length > 0) {
+            const real = trendJson.trend;
+
+            // Update trendData array
+            trendData.length = 0;
+            real.forEach(d => trendData.push(d));
+
+            // If chart already rendered, update it
+            if (trendChart) {
+                trendChart.data.labels           = trendData.map(d => d.day);
+                trendChart.data.datasets[0].data = trendData.map(d => d.hes);
+                trendChart.data.datasets[1].data = trendData.map(d => d.conv);
+                trendChart.update();
+            }
+        }
+
+        console.log('Chart data loaded successfully');
+    } catch(e) {
+        console.warn('Chart data fetch failed, using dummy data:', e);
+    }
+}
+
 // Load on startup, refresh every 15 seconds
 window.addEventListener('load', () => {
   loadCloudData();
+  loadChartData();
   setInterval(loadCloudData, 15000);
+  setInterval(loadChartData, 30000);
 });
 // ── DUMMY DATA ──
 const zoneData = {
