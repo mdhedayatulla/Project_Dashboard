@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>ShelfIQ — Retail Behavioral Analytics</title>
+<title>IntelliShelf — Retail Behavioral Analytics</title>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
@@ -839,6 +839,7 @@ async function loadCloudData() {
         int:   ev.interactions
       }));
       renderFeed();
+      updateZoneCards(feedItems);
     }
 
     console.log('Cloud data loaded successfully');
@@ -1034,47 +1035,90 @@ function addFeedEvent() {
 //setInterval(addFeedEvent, 17000);
 
 // ── LIVE ZONE SIMULATION ──
-const zoneState = { A:{active:false,timer:0,interval:null}, B:{active:false,timer:0,interval:null}, C:{active:false,timer:0,interval:null} };
+// Tracks countdown timers per zone
+const zoneTimers = { A: null, B: null, C: null };
+const ACTIVE_WINDOW_SECONDS = 60; // consider zone active if last event < 60s ago
 
-function setZoneActive(z) {
-  if (zoneState[z].active) return;
-  zoneState[z].active = true;
-  zoneState[z].timer = 0;
-  const dot = document.getElementById('zdot-'+z);
-  const statusEl = document.getElementById('zstatus-'+z);
-  const dwellEl = document.getElementById('zdwell-'+z);
-  if(dot){dot.className='status-dot active';}
-  if(statusEl){statusEl.textContent='ACTIVE';statusEl.style.color='var(--green)';}
-  zoneState[z].interval = setInterval(()=>{
-    zoneState[z].timer++;
-    if(dwellEl) dwellEl.textContent = `⏱ Dwell: ${zoneState[z].timer}s`;
-  },1000);
-  const duration = Math.floor(Math.random()*20)+10;
-  setTimeout(()=>setZoneIdle(z), duration*1000);
-}
+function updateZoneCards(feed) {
+    // Get most recent event per zone from feed
+    const latestByZone = {};
+    feed.forEach(item => {
+        const z = item.zone.replace('Zone ', '');
+        if (!latestByZone[z]) latestByZone[z] = item;
+    });
 
-function setZoneIdle(z) {
-  if (!zoneState[z].active) return;
-  zoneState[z].active = false;
-  clearInterval(zoneState[z].interval);
-  const beh = behaviors[Math.floor(Math.random()*4)];
-  const dot = document.getElementById('zdot-'+z);
-  const statusEl = document.getElementById('zstatus-'+z);
-  const dwellEl = document.getElementById('zdwell-'+z);
-  const behEl = document.getElementById('zbeh-'+z);
-  const sessEl = document.getElementById('zsess-'+z);
-  if(dot){dot.className='status-dot idle';}
-  if(statusEl){statusEl.textContent='IDLE';statusEl.style.color='var(--text3)';}
-  if(dwellEl){dwellEl.textContent='⏱ No active session';dwellEl.style.color='var(--text3)';}
-  if(behEl){behEl.className=`beh-badge beh-${beh}`;behEl.textContent=beh.replace(/_/g,' ');}
-  if(sessEl){ const cur=parseInt(sessEl.textContent)||0; sessEl.textContent=cur+1; }
-}
+    ['A', 'B', 'C'].forEach(z => {
+        const dot      = document.getElementById(`zdot-${z}`);
+        const statusEl = document.getElementById(`zstatus-${z}`);
+        const dwellEl  = document.getElementById(`zdwell-${z}`);
+        const behEl    = document.getElementById(`zbeh-${z}`);
+        const latest   = latestByZone[z];
 
-function triggerRandomZone() {
-  const z = ['A','B','C'][Math.floor(Math.random()*3)];
-  if (!zoneState[z].active) setZoneActive(z);
+        // Clear any existing timer for this zone
+        if (zoneTimers[z]) {
+            clearInterval(zoneTimers[z]);
+            zoneTimers[z] = null;
+        }
+
+        if (!latest) {
+            // No data at all for this zone
+            if (dot)      dot.className     = 'status-dot idle';
+            if (statusEl) { statusEl.textContent = 'IDLE'; statusEl.style.color = 'var(--text3)'; }
+            if (dwellEl)  { dwellEl.textContent  = '⏱ No active session'; dwellEl.style.color = 'var(--text3)'; }
+            return;
+        }
+
+        // Check how long ago this event was
+        // feed items have time like "14:32" — compare to current time
+        const now        = new Date();
+        const [hh, mm]   = latest.time.split(':').map(Number);
+        const eventTime  = new Date();
+        eventTime.setHours(hh, mm, 0, 0);
+        const secondsAgo = Math.floor((now - eventTime) / 1000);
+
+        if (secondsAgo <= ACTIVE_WINDOW_SECONDS && secondsAgo >= 0) {
+            // Zone is ACTIVE — show real dwell time and behavior
+            if (dot)      dot.className     = 'status-dot active';
+            if (statusEl) { statusEl.textContent = 'ACTIVE'; statusEl.style.color = 'var(--green)'; }
+            if (behEl)    { 
+                behEl.className   = `beh-badge beh-${latest.beh}`;
+                behEl.textContent = latest.beh.replace(/_/g, ' ');
+            }
+
+            // Count up timer from real dwell time
+            let elapsed = secondsAgo;
+            if (dwellEl) {
+                dwellEl.style.color  = 'var(--cyan)';
+                dwellEl.textContent  = `⏱ Dwell: ${elapsed}s`;
+            }
+
+            // Keep counting up every second
+            zoneTimers[z] = setInterval(() => {
+                elapsed++;
+                if (dwellEl) dwellEl.textContent = `⏱ Dwell: ${elapsed}s`;
+
+                // Auto flip to idle after window expires
+                if (elapsed > ACTIVE_WINDOW_SECONDS) {
+                    clearInterval(zoneTimers[z]);
+                    zoneTimers[z] = null;
+                    if (dot)      dot.className     = 'status-dot idle';
+                    if (statusEl) { statusEl.textContent = 'IDLE'; statusEl.style.color = 'var(--text3)'; }
+                    if (dwellEl)  { dwellEl.textContent  = '⏱ No active session'; dwellEl.style.color = 'var(--text3)'; }
+                }
+            }, 1000);
+
+        } else {
+            // Zone is IDLE — show last known behavior
+            if (dot)      dot.className     = 'status-dot idle';
+            if (statusEl) { statusEl.textContent = 'IDLE'; statusEl.style.color = 'var(--text3)'; }
+            if (dwellEl)  { dwellEl.textContent  = '⏱ No active session'; dwellEl.style.color = 'var(--text3)'; }
+            if (behEl)    {
+                behEl.className   = `beh-badge beh-${latest.beh}`;
+                behEl.textContent = latest.beh.replace(/_/g, ' ');
+            }
+        }
+    });
 }
-setZoneActive('A');
 //setInterval(triggerRandomZone, 11000);
 
 // ── ANALYTICS PAGE ──
