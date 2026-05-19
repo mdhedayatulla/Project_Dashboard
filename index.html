@@ -7,1414 +7,1032 @@
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
-  :root {
-    --bg: #0a0f1e;
-    --card: #111827;
-    --border: #1f2937;
-    --cyan: #00d4ff;
-    --green: #10b981;
-    --amber: #f59e0b;
-    --red: #ef4444;
-    --indigo: #6366f1;
-    --blue: #3b82f6;
-    --text: #f9fafb;
-    --text2: #9ca3af;
-    --text3: #4b5563;
-    --sidebar-w: 220px;
-  }
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  html, body { height: 100%; font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); overflow: hidden; }
-
-  /* Grid background */
-  body::before {
-    content: '';
-    position: fixed; inset: 0; z-index: 0;
-    background-image:
-      linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
-    background-size: 40px 40px;
-    pointer-events: none;
-  }
-
-  /* ── SIDEBAR ── */
-  #sidebar {
-    position: fixed; top: 0; left: 0; bottom: 0;
-    width: var(--sidebar-w);
-    background: rgba(17,24,39,0.95);
-    border-right: 1px solid var(--border);
-    display: flex; flex-direction: column;
-    z-index: 100;
-    backdrop-filter: blur(10px);
-  }
-  .sb-logo {
-    padding: 24px 20px 18px;
-    border-bottom: 1px solid var(--border);
-  }
-  .sb-logo .brand {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 20px; font-weight: 700;
-    color: var(--cyan);
-    letter-spacing: -0.5px;
-  }
-  .sb-logo .tagline {
-    font-size: 10px; color: var(--text3);
-    font-family: 'JetBrains Mono', monospace;
-    letter-spacing: 1px; text-transform: uppercase;
-    margin-top: 4px;
-  }
-  .sb-nav { padding: 16px 0; flex: 1; }
-  .nav-item {
-    display: flex; align-items: center; gap: 12px;
-    padding: 11px 20px;
-    font-size: 13px; font-weight: 500;
-    color: var(--text2);
-    cursor: pointer;
-    transition: all 0.2s;
-    border-left: 3px solid transparent;
-    position: relative;
-  }
-  .nav-item:hover { color: var(--text); background: rgba(255,255,255,0.04); }
-  .nav-item.active { color: var(--cyan); background: rgba(0,212,255,0.08); border-left-color: var(--cyan); }
-  .nav-item svg { width: 16px; height: 16px; flex-shrink: 0; }
-  .sb-footer {
-    padding: 16px 20px;
-    border-top: 1px solid var(--border);
-  }
-  .sys-status { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
-  .pulse-dot {
-    width: 8px; height: 8px; border-radius: 50%;
-    background: var(--green);
-    box-shadow: 0 0 8px var(--green);
-    animation: pulse 2s infinite;
-  }
-  @keyframes pulse {
-    0%,100% { opacity:1; box-shadow: 0 0 8px var(--green); }
-    50% { opacity:0.5; box-shadow: 0 0 3px var(--green); }
-  }
-  .sys-label { font-size: 11px; color: var(--text2); font-family: 'JetBrains Mono', monospace; }
-  #live-clock { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--cyan); margin-top: 4px; }
-
-  /* ── MAIN ── */
-  #main {
-    margin-left: var(--sidebar-w);
-    height: 100vh;
-    overflow-y: auto;
-    overflow-x: hidden;
-    position: relative; z-index: 1;
-  }
-  .page { display: none; padding: 28px 28px 40px; min-height: 100vh; }
-  .page.active { display: block; }
-
-  .page-header {
-    display: flex; align-items: center; justify-content: space-between;
-    margin-bottom: 24px;
-  }
-  .page-title {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 18px; font-weight: 700; color: var(--text);
-  }
-  .page-sub { font-size: 12px; color: var(--text3); margin-top: 3px; }
-  .live-badge {
-    display: flex; align-items: center; gap: 6px;
-    background: rgba(16,185,129,0.12); border: 1px solid rgba(16,185,129,0.3);
-    border-radius: 6px; padding: 5px 12px;
-    font-size: 11px; color: var(--green);
-    font-family: 'JetBrains Mono', monospace;
-  }
-
-  /* ── CARDS ── */
-  .card {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 20px;
-    transition: box-shadow 0.25s;
-  }
-  .card:hover { box-shadow: 0 0 18px rgba(0,212,255,0.09); }
-  .card-title {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 10px; font-weight: 600;
-    color: var(--text3); text-transform: uppercase; letter-spacing: 1.2px;
-    margin-bottom: 12px;
-  }
-
-  /* ── GRID UTILS ── */
-  .grid-4 { display: grid; grid-template-columns: repeat(4,1fr); gap: 16px; margin-bottom: 20px; }
-  .grid-3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; margin-bottom: 20px; }
-  .grid-2 { display: grid; grid-template-columns: repeat(2,1fr); gap: 16px; margin-bottom: 20px; }
-
-  /* ── STAT CARDS ── */
-  .stat-card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 18px 20px; transition: box-shadow 0.25s; }
-  .stat-card:hover { box-shadow: 0 0 18px rgba(0,212,255,0.09); }
-  .stat-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
-  .stat-icon { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; }
-  .stat-trend { font-size: 11px; font-family: 'JetBrains Mono', monospace; }
-  .trend-up { color: var(--green); } .trend-down { color: var(--red); }
-  .stat-val { font-family: 'JetBrains Mono', monospace; font-size: 26px; font-weight: 700; color: var(--text); }
-  .stat-label { font-size: 11px; color: var(--text2); margin-top: 3px; }
-
-  /* ── ZONE CARDS ── */
-  .zone-card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 20px; transition: box-shadow 0.25s; }
-  .zone-card:hover { box-shadow: 0 0 18px rgba(0,212,255,0.09); }
-  .zone-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
-  .zone-name { font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 700; }
-  .zone-cat { font-size: 11px; color: var(--text3); margin-top: 2px; }
-  .status-badge { display: flex; align-items: center; gap: 6px; font-size: 11px; font-family: 'JetBrains Mono', monospace; }
-  .status-dot { width: 8px; height: 8px; border-radius: 50%; }
-  .status-dot.active { background: var(--green); box-shadow: 0 0 8px var(--green); animation: pulse 2s infinite; }
-  .status-dot.idle { background: var(--text3); }
-  .dwell-timer { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--cyan); background: rgba(0,212,255,0.1); padding: 3px 8px; border-radius: 4px; margin-bottom: 10px; }
-  .zone-metrics { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 14px; }
-  .zm-item .zm-val { font-family: 'JetBrains Mono', monospace; font-size: 16px; font-weight: 700; }
-  .zm-item .zm-label { font-size: 10px; color: var(--text3); margin-top: 2px; }
-  .hes-bar-wrap { margin-top: 4px; }
-  .hes-bar-label { display: flex; justify-content: space-between; font-size: 10px; color: var(--text3); margin-bottom: 4px; }
-  .hes-bar-bg { height: 4px; background: var(--border); border-radius: 2px; }
-  .hes-bar-fill { height: 100%; border-radius: 2px; transition: width 0.5s; }
-
-  /* ── BEHAVIOR BADGE ── */
-  .beh-badge {
-    display: inline-block; padding: 3px 9px; border-radius: 4px;
-    font-size: 10px; font-family: 'JetBrains Mono', monospace; font-weight: 600;
-    text-transform: uppercase; letter-spacing: 0.5px;
-  }
-  .beh-EXPLORATORY_BROWSING { background: rgba(99,102,241,0.18); color: #818cf8; border: 1px solid rgba(99,102,241,0.3); }
-  .beh-FOCUSED_INTEREST { background: rgba(59,130,246,0.18); color: #60a5fa; border: 1px solid rgba(59,130,246,0.3); }
-  .beh-PROBABLE_HESITATION { background: rgba(245,158,11,0.18); color: #fbbf24; border: 1px solid rgba(245,158,11,0.3); }
-  .beh-SUCCESSFUL_CONVERSION { background: rgba(16,185,129,0.18); color: #34d399; border: 1px solid rgba(16,185,129,0.3); }
-
-  /* ── ACTIVITY FEED ── */
-  .feed-table { width: 100%; border-collapse: collapse; }
-  .feed-table th { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 1px; padding: 8px 12px; text-align: left; border-bottom: 1px solid var(--border); }
-  .feed-table td { padding: 10px 12px; font-size: 12px; border-bottom: 1px solid rgba(31,41,55,0.5); vertical-align: middle; }
-  .feed-table tr { transition: background 0.2s; }
-  .feed-table tr:hover { background: rgba(255,255,255,0.02); }
-  .feed-table tr.new-row { animation: fadeIn 0.4s ease; }
-  @keyframes fadeIn { from { opacity:0; transform: translateY(-8px); } to { opacity:1; transform:none; } }
-  .feed-scroll { max-height: 320px; overflow-y: auto; }
-  .feed-scroll::-webkit-scrollbar { width: 4px; }
-  .feed-scroll::-webkit-scrollbar-track { background: transparent; }
-  .feed-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
-  .time-mono { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text3); }
-  .zone-tag { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--cyan); }
-
-  /* ── CHART CONTAINERS ── */
-  .chart-wrap { position: relative; height: 260px; }
-  .chart-title { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text2); margin-bottom: 14px; }
-
-  /* ── ZONE TABS ── */
-  .zone-tabs { display: flex; gap: 4px; margin-bottom: 20px; }
-  .ztab { padding: 8px 18px; border-radius: 6px; font-size: 12px; font-family: 'JetBrains Mono', monospace; cursor: pointer; border: 1px solid var(--border); background: transparent; color: var(--text2); transition: all 0.2s; }
-  .ztab:hover { color: var(--text); background: rgba(255,255,255,0.04); }
-  .ztab.active { background: rgba(0,212,255,0.12); border-color: var(--cyan); color: var(--cyan); }
-
-  /* ── TABLE ── */
-  .data-table { width: 100%; border-collapse: collapse; font-size: 12px; }
-  .data-table th { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 1px; padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border); }
-  .data-table td { padding: 12px 14px; border-bottom: 1px solid rgba(31,41,55,0.5); }
-  .data-table tr:hover td { background: rgba(255,255,255,0.02); }
-  .rate-val { font-family: 'JetBrains Mono', monospace; font-weight: 600; }
-  .rate-high { color: var(--red); } .rate-mid { color: var(--amber); } .rate-ok { color: var(--green); }
-
-  /* ── HESITATION MAP ── */
-  .shelf-container { display: flex; gap: 2px; height: 220px; border-radius: 10px; overflow: hidden; border: 1px solid var(--border); }
-  .shelf-zone {
-    flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
-    cursor: pointer; position: relative; transition: filter 0.2s;
-  }
-  .shelf-zone:hover { filter: brightness(1.15); }
-  .shelf-zone .sz-label { font-family: 'JetBrains Mono', monospace; font-size: 16px; font-weight: 700; color: rgba(255,255,255,0.9); }
-  .shelf-zone .sz-cat { font-size: 12px; color: rgba(255,255,255,0.7); margin-top: 4px; }
-  .shelf-zone .sz-rate { font-family: 'JetBrains Mono', monospace; font-size: 28px; font-weight: 700; color: #fff; margin-top: 12px; }
-  .shelf-zone .sz-sub { font-size: 11px; color: rgba(255,255,255,0.6); margin-top: 2px; }
-  .shelf-tooltip {
-    position: absolute; bottom: 110%; left: 50%; transform: translateX(-50%);
-    background: #1e2a3a; border: 1px solid var(--border); border-radius: 8px;
-    padding: 12px 16px; width: 180px; pointer-events: none;
-    opacity: 0; transition: opacity 0.2s; z-index: 50;
-    font-size: 11px; color: var(--text2);
-  }
-  .shelf-zone:hover .shelf-tooltip { opacity: 1; }
-  .shelf-tooltip .tt-row { display: flex; justify-content: space-between; margin-bottom: 5px; }
-  .shelf-tooltip .tt-val { font-family: 'JetBrains Mono', monospace; color: var(--text); font-weight: 600; }
-
-  /* ── RISK CARDS ── */
-  .risk-card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 18px; }
-  .risk-badge { display: inline-block; padding: 2px 10px; border-radius: 4px; font-size: 10px; font-family: 'JetBrains Mono', monospace; font-weight: 700; letter-spacing: 1px; margin-bottom: 10px; }
-  .risk-LOW { background: rgba(16,185,129,0.15); color: var(--green); border: 1px solid rgba(16,185,129,0.3); }
-  .risk-MEDIUM { background: rgba(245,158,11,0.15); color: var(--amber); border: 1px solid rgba(245,158,11,0.3); }
-  .risk-HIGH { background: rgba(239,68,68,0.15); color: var(--red); border: 1px solid rgba(239,68,68,0.3); }
-  .risk-title { font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 700; margin-bottom: 6px; }
-  .risk-concern { font-size: 12px; color: var(--text2); margin-bottom: 8px; }
-  .risk-action { font-size: 11px; color: var(--cyan); background: rgba(0,212,255,0.08); border-radius: 4px; padding: 6px 10px; }
-
-  /* ── ML INSIGHTS ── */
-  .insight-card {
-    background: var(--card); border: 1px solid var(--border); border-radius: 10px;
-    padding: 20px 20px 20px 24px; margin-bottom: 14px;
-    display: flex; align-items: flex-start; gap: 16px;
-    position: relative; overflow: hidden;
-    transition: box-shadow 0.25s;
-  }
-  .insight-card:hover { box-shadow: 0 0 18px rgba(0,212,255,0.07); }
-  .insight-card::before { content:''; position:absolute; left:0; top:0; bottom:0; width:4px; }
-  .insight-card.WARNING::before { background: var(--red); }
-  .insight-card.INFO::before { background: var(--blue); }
-  .insight-card.SUCCESS::before { background: var(--green); }
-  .insight-icon { width: 40px; height: 40px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
-  .insight-body { flex: 1; }
-  .insight-top { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
-  .insight-title { font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 700; }
-  .insight-zone-tag { font-size: 10px; font-family: 'JetBrains Mono', monospace; padding: 2px 8px; border-radius: 4px; background: rgba(0,212,255,0.1); color: var(--cyan); }
-  .insight-msg { font-size: 12px; color: var(--text2); line-height: 1.6; }
-  .insight-metric { font-family: 'JetBrains Mono', monospace; font-size: 15px; font-weight: 700; margin-left: auto; flex-shrink: 0; align-self: center; padding-left: 20px; }
-  .insight-card.WARNING .insight-metric { color: var(--red); }
-  .insight-card.INFO .insight-metric { color: var(--blue); }
-  .insight-card.SUCCESS .insight-metric { color: var(--green); }
-
-  /* ── FUNNEL ── */
-  .funnel-wrap { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 20px 0; }
-  .funnel-stage { display: flex; align-items: center; justify-content: center; flex-direction: column; color: #fff; position: relative; transition: filter 0.2s; }
-  .funnel-stage:hover { filter: brightness(1.1); }
-  .funnel-label { font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 700; }
-  .funnel-val { font-family: 'JetBrains Mono', monospace; font-size: 22px; font-weight: 700; margin-top: 4px; }
-  .funnel-pct { font-size: 11px; opacity: 0.8; margin-top: 2px; }
-
-  /* ── SCROLLBAR ── */
-  #main::-webkit-scrollbar { width: 5px; }
-  #main::-webkit-scrollbar-track { background: transparent; }
-  #main::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
-
-  /* Feature importance bars */
-  .fi-row { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
-  .fi-label { font-size: 12px; color: var(--text2); width: 180px; flex-shrink: 0; }
-  .fi-bar-bg { flex: 1; height: 8px; background: var(--border); border-radius: 4px; }
-  .fi-bar-fill { height: 100%; border-radius: 4px; background: linear-gradient(90deg, var(--cyan), var(--blue)); }
-  .fi-pct { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--cyan); width: 36px; text-align: right; }
-
-  .section-sep { height: 20px; }
+ :root {
+  --bg: #0a0f1e; --card: #111827; --border: #1f2937;
+  --cyan: #00d4ff; --green: #10b981; --amber: #f59e0b;
+  --red: #ef4444; --indigo: #6366f1; --blue: #3b82f6;
+  --text: #f9fafb; --text2: #9ca3af; --text3: #4b5563;
+  --sidebar-w: 220px;
+ }
+ *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+ html, body { height: 100%; font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); overflow: hidden; }
+ body::before {
+  content: ''; position: fixed; inset: 0; z-index: 0;
+  background-image: linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
+  background-size: 40px 40px; pointer-events: none;
+ }
+ /* SIDEBAR */
+ #sidebar {
+  position: fixed; top: 0; left: 0; bottom: 0; width: var(--sidebar-w);
+  background: rgba(17,24,39,0.95); border-right: 1px solid var(--border);
+  display: flex; flex-direction: column; z-index: 100; backdrop-filter: blur(10px);
+ }
+ .sb-logo { padding: 24px 20px 18px; border-bottom: 1px solid var(--border); }
+ .sb-logo .brand { font-family: 'JetBrains Mono', monospace; font-size: 20px; font-weight: 700; color: var(--cyan); letter-spacing: -0.5px; }
+ .sb-logo .tagline { font-size: 10px; color: var(--text3); font-family: 'JetBrains Mono', monospace; letter-spacing: 1px; text-transform: uppercase; margin-top: 4px; }
+ .sb-nav { padding: 16px 0; flex: 1; }
+ .nav-item {
+  display: flex; align-items: center; gap: 12px; padding: 11px 20px;
+  font-size: 13px; font-weight: 500; color: var(--text2); cursor: pointer;
+  transition: all 0.2s; border-left: 3px solid transparent; position: relative;
+ }
+ .nav-item:hover { color: var(--text); background: rgba(255,255,255,0.04); }
+ .nav-item.active { color: var(--cyan); background: rgba(0,212,255,0.08); border-left-color: var(--cyan); }
+ .nav-item svg { width: 16px; height: 16px; flex-shrink: 0; }
+ .sb-footer { padding: 16px 20px; border-top: 1px solid var(--border); }
+ .sys-status { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+ .pulse-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); box-shadow: 0 0 8px var(--green); animation: pulse 2s infinite; }
+ @keyframes pulse { 0%,100% { opacity:1; box-shadow: 0 0 8px var(--green); } 50% { opacity:0.5; box-shadow: 0 0 3px var(--green); } }
+ .sys-label { font-size: 11px; color: var(--text2); font-family: 'JetBrains Mono', monospace; }
+ #live-clock { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--cyan); margin-top: 4px; }
+ /* MAIN */
+ #main { margin-left: var(--sidebar-w); height: 100vh; overflow-y: auto; overflow-x: hidden; position: relative; z-index: 1; }
+ .page { display: none; padding: 28px 28px 40px; min-height: 100vh; }
+ .page.active { display: block; }
+ .page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
+ .page-title { font-family: 'JetBrains Mono', monospace; font-size: 18px; font-weight: 700; color: var(--text); }
+ .page-sub { font-size: 12px; color: var(--text3); margin-top: 3px; }
+ .live-badge { display: flex; align-items: center; gap: 6px; background: rgba(16,185,129,0.12); border: 1px solid rgba(16,185,129,0.3); border-radius: 6px; padding: 5px 12px; font-size: 11px; color: var(--green); font-family: 'JetBrains Mono', monospace; }
+ /* CARDS */
+ .card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 20px; transition: box-shadow 0.25s; }
+ .card:hover { box-shadow: 0 0 18px rgba(0,212,255,0.09); }
+ .card-title { font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 1.2px; margin-bottom: 12px; }
+ /* GRID */
+ .grid-4 { display: grid; grid-template-columns: repeat(4,1fr); gap: 16px; margin-bottom: 20px; }
+ .grid-3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; margin-bottom: 20px; }
+ .grid-2 { display: grid; grid-template-columns: repeat(2,1fr); gap: 16px; margin-bottom: 20px; }
+ /* STAT CARDS */
+ .stat-card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 18px 20px; transition: box-shadow 0.25s; }
+ .stat-card:hover { box-shadow: 0 0 18px rgba(0,212,255,0.09); }
+ .stat-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+ .stat-icon { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+ .stat-trend { font-size: 11px; font-family: 'JetBrains Mono', monospace; }
+ .trend-up { color: var(--green); } .trend-down { color: var(--red); }
+ .stat-val { font-family: 'JetBrains Mono', monospace; font-size: 26px; font-weight: 700; color: var(--text); }
+ .stat-label { font-size: 11px; color: var(--text2); margin-top: 3px; }
+ /* ZONE CARDS */
+ .zone-card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 20px; transition: box-shadow 0.25s; }
+ .zone-card:hover { box-shadow: 0 0 18px rgba(0,212,255,0.09); }
+ .zone-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+ .zone-name { font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 700; }
+ .zone-cat { font-size: 11px; color: var(--text3); margin-top: 2px; }
+ .status-badge { display: flex; align-items: center; gap: 6px; font-size: 11px; font-family: 'JetBrains Mono', monospace; }
+ .status-dot { width: 8px; height: 8px; border-radius: 50%; }
+ .status-dot.active { background: var(--green); box-shadow: 0 0 8px var(--green); animation: pulse 2s infinite; }
+ .status-dot.idle { background: var(--text3); }
+ .dwell-timer { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--cyan); background: rgba(0,212,255,0.1); padding: 3px 8px; border-radius: 4px; margin-bottom: 10px; }
+ .zone-metrics { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+ .zm-item .zm-val { font-family: 'JetBrains Mono', monospace; font-size: 16px; font-weight: 700; }
+ .zm-item .zm-label { font-size: 10px; color: var(--text3); margin-top: 2px; }
+ .hes-bar-wrap { margin-top: 4px; }
+ .hes-bar-label { display: flex; justify-content: space-between; font-size: 10px; color: var(--text3); margin-bottom: 4px; }
+ .hes-bar-bg { height: 4px; background: var(--border); border-radius: 2px; }
+ .hes-bar-fill { height: 100%; border-radius: 2px; transition: width 0.5s; }
+ /* BEHAVIOR BADGE */
+ .beh-badge { display: inline-block; padding: 3px 9px; border-radius: 4px; font-size: 10px; font-family: 'JetBrains Mono', monospace; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+ .beh-EXPLORATORY_BROWSING { background: rgba(99,102,241,0.18); color: #818cf8; border: 1px solid rgba(99,102,241,0.3); }
+ .beh-FOCUSED_INTEREST { background: rgba(59,130,246,0.18); color: #60a5fa; border: 1px solid rgba(59,130,246,0.3); }
+ .beh-PROBABLE_HESITATION { background: rgba(245,158,11,0.18); color: #fbbf24; border: 1px solid rgba(245,158,11,0.3); }
+ .beh-SUCCESSFUL_CONVERSION { background: rgba(16,185,129,0.18); color: #34d399; border: 1px solid rgba(16,185,129,0.3); }
+ .beh-PRESENCE_ONLY { background: rgba(156,163,175,0.18); color: #9ca3af; border: 1px solid rgba(156,163,175,0.3); }
+ .beh-UNDETERMINED { background: rgba(75,85,99,0.18); color: #6b7280; border: 1px solid rgba(75,85,99,0.3); }
+ /* ACTIVITY FEED */
+ .feed-table { width: 100%; border-collapse: collapse; }
+ .feed-table th { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 1px; padding: 8px 12px; text-align: left; border-bottom: 1px solid var(--border); }
+ .feed-table td { padding: 10px 12px; font-size: 12px; border-bottom: 1px solid rgba(31,41,55,0.5); vertical-align: middle; }
+ .feed-table tr { transition: background 0.2s; }
+ .feed-table tr:hover { background: rgba(255,255,255,0.02); }
+ .feed-table tr.new-row { animation: fadeIn 0.4s ease; }
+ @keyframes fadeIn { from { opacity:0; transform: translateY(-8px); } to { opacity:1; transform:none; } }
+ .feed-scroll { max-height: 320px; overflow-y: auto; }
+ .feed-scroll::-webkit-scrollbar { width: 4px; }
+ .feed-scroll::-webkit-scrollbar-track { background: transparent; }
+ .feed-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+ .time-mono { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text3); }
+ .zone-tag { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--cyan); }
+ /* CHART CONTAINERS */
+ .chart-wrap { position: relative; height: 260px; }
+ .chart-wrap-sm { position: relative; height: 200px; }
+ .chart-title { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text2); margin-bottom: 14px; }
+ /* ZONE TABS */
+ .zone-tabs { display: flex; gap: 4px; margin-bottom: 20px; }
+ .ztab { padding: 8px 18px; border-radius: 6px; font-size: 12px; font-family: 'JetBrains Mono', monospace; cursor: pointer; border: 1px solid var(--border); background: transparent; color: var(--text2); transition: all 0.2s; }
+ .ztab:hover { color: var(--text); background: rgba(255,255,255,0.04); }
+ .ztab.active { background: rgba(0,212,255,0.12); border-color: var(--cyan); color: var(--cyan); }
+ /* TABLE */
+ .data-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+ .data-table th { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 1px; padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border); }
+ .data-table td { padding: 12px 14px; border-bottom: 1px solid rgba(31,41,55,0.5); }
+ .data-table tr:hover td { background: rgba(255,255,255,0.02); }
+ .rate-val { font-family: 'JetBrains Mono', monospace; font-weight: 600; }
+ .rate-high { color: var(--red); } .rate-mid { color: var(--amber); } .rate-ok { color: var(--green); }
+ /* HESITATION MAP */
+ .shelf-container { display: flex; gap: 2px; height: 220px; border-radius: 10px; overflow: hidden; border: 1px solid var(--border); }
+ .shelf-zone { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; position: relative; transition: filter 0.2s; }
+ .shelf-zone:hover { filter: brightness(1.15); }
+ .shelf-zone .sz-label { font-family: 'JetBrains Mono', monospace; font-size: 16px; font-weight: 700; color: rgba(255,255,255,0.9); }
+ .shelf-zone .sz-cat { font-size: 12px; color: rgba(255,255,255,0.7); margin-top: 4px; }
+ .shelf-zone .sz-rate { font-family: 'JetBrains Mono', monospace; font-size: 28px; font-weight: 700; color: #fff; margin-top: 12px; }
+ .shelf-zone .sz-sub { font-size: 11px; color: rgba(255,255,255,0.6); margin-top: 2px; }
+ .shelf-tooltip { position: absolute; bottom: 110%; left: 50%; transform: translateX(-50%); background: #1e2a3a; border: 1px solid var(--border); border-radius: 8px; padding: 12px 16px; width: 180px; pointer-events: none; opacity: 0; transition: opacity 0.2s; z-index: 50; font-size: 11px; color: var(--text2); }
+ .shelf-zone:hover .shelf-tooltip { opacity: 1; }
+ .shelf-tooltip .tt-row { display: flex; justify-content: space-between; margin-bottom: 5px; }
+ .shelf-tooltip .tt-val { font-family: 'JetBrains Mono', monospace; color: var(--text); font-weight: 600; }
+ /* RISK CARDS */
+ .risk-card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 18px; }
+ .risk-badge { display: inline-block; padding: 2px 10px; border-radius: 4px; font-size: 10px; font-family: 'JetBrains Mono', monospace; font-weight: 700; letter-spacing: 1px; margin-bottom: 10px; }
+ .risk-LOW { background: rgba(16,185,129,0.15); color: var(--green); border: 1px solid rgba(16,185,129,0.3); }
+ .risk-MEDIUM { background: rgba(245,158,11,0.15); color: var(--amber); border: 1px solid rgba(245,158,11,0.3); }
+ .risk-HIGH { background: rgba(239,68,68,0.15); color: var(--red); border: 1px solid rgba(239,68,68,0.3); }
+ .risk-title { font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 700; margin-bottom: 6px; }
+ .risk-concern { font-size: 12px; color: var(--text2); margin-bottom: 8px; }
+ .risk-action { font-size: 11px; color: var(--cyan); background: rgba(0,212,255,0.08); border-radius: 4px; padding: 6px 10px; }
+ /* ML INSIGHTS */
+ .insight-card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 20px 20px 20px 24px; margin-bottom: 14px; display: flex; align-items: flex-start; gap: 16px; position: relative; overflow: hidden; transition: box-shadow 0.25s; }
+ .insight-card:hover { box-shadow: 0 0 18px rgba(0,212,255,0.07); }
+ .insight-card::before { content:''; position:absolute; left:0; top:0; bottom:0; width:4px; }
+ .insight-card.WARNING::before { background: var(--red); }
+ .insight-card.INFO::before { background: var(--blue); }
+ .insight-card.SUCCESS::before { background: var(--green); }
+ .insight-icon { width: 40px; height: 40px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+ .insight-body { flex: 1; }
+ .insight-top { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+ .insight-title { font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 700; }
+ .insight-zone-tag { font-size: 10px; font-family: 'JetBrains Mono', monospace; padding: 2px 8px; border-radius: 4px; background: rgba(0,212,255,0.1); color: var(--cyan); }
+ .insight-msg { font-size: 12px; color: var(--text2); line-height: 1.6; }
+ .insight-metric { font-family: 'JetBrains Mono', monospace; font-size: 15px; font-weight: 700; margin-left: auto; flex-shrink: 0; align-self: center; padding-left: 20px; }
+ .insight-card.WARNING .insight-metric { color: var(--red); }
+ .insight-card.INFO .insight-metric { color: var(--blue); }
+ .insight-card.SUCCESS .insight-metric { color: var(--green); }
+ /* FUNNEL */
+ .funnel-wrap { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 20px 0; }
+ .funnel-stage { display: flex; align-items: center; justify-content: center; flex-direction: column; color: #fff; position: relative; transition: filter 0.2s; }
+ .funnel-stage:hover { filter: brightness(1.1); }
+ .funnel-label { font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 700; }
+ .funnel-val { font-family: 'JetBrains Mono', monospace; font-size: 22px; font-weight: 700; margin-top: 4px; }
+ .funnel-pct { font-size: 11px; opacity: 0.8; margin-top: 2px; }
+ .funnel-arrow { text-align:center; font-size:11px; color:var(--text3); margin:2px 0; }
+ /* SCROLLBAR */
+ #main::-webkit-scrollbar { width: 5px; }
+ #main::-webkit-scrollbar-track { background: transparent; }
+ #main::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+ /* Feature importance */
+ .fi-row { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+ .fi-label { font-size: 12px; color: var(--text2); width: 180px; flex-shrink: 0; }
+ .fi-bar-bg { flex: 1; height: 8px; background: var(--border); border-radius: 4px; }
+ .fi-bar-fill { height: 100%; border-radius: 4px; background: linear-gradient(90deg, var(--cyan), var(--blue)); }
+ .fi-pct { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--cyan); width: 36px; text-align: right; }
+ .section-sep { height: 20px; }
+ /* BILLING-SPECIFIC STYLES */
+ .billing-stat-card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 18px 20px; }
+ .billing-stat-val { font-family: 'JetBrains Mono', monospace; font-size: 24px; font-weight: 700; margin-bottom: 4px; }
+ .billing-stat-label { font-size: 11px; color: var(--text2); }
+ .billing-stat-sub { font-size: 10px; color: var(--text3); margin-top: 3px; font-family: 'JetBrains Mono', monospace; }
+ .product-pill { display: inline-flex; align-items: center; gap: 6px; background: rgba(0,212,255,0.07); border: 1px solid rgba(0,212,255,0.15); border-radius: 6px; padding: 5px 10px; font-size: 11px; margin: 4px 4px 4px 0; }
+ .product-pill .pill-count { font-family: 'JetBrains Mono', monospace; color: var(--cyan); font-weight: 700; }
+ .conv-window-badge { display: inline-flex; align-items: center; gap: 6px; background: rgba(99,102,241,0.1); border: 1px solid rgba(99,102,241,0.25); border-radius: 6px; padding: 5px 12px; font-size: 11px; color: #818cf8; font-family: 'JetBrains Mono', monospace; }
+ .loading-placeholder { text-align:center; color:var(--text3); font-family:'JetBrains Mono',monospace; padding:40px; font-size:12px; }
+ .error-placeholder { text-align:center; color:var(--red); font-family:'JetBrains Mono',monospace; padding:40px; font-size:12px; }
+ .beh-conv-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+ .beh-conv-bar-wrap { flex: 1; }
+ .beh-conv-bar-bg { height: 6px; background: var(--border); border-radius: 3px; }
+ .beh-conv-bar-fill { height: 100%; border-radius: 3px; transition: width 0.6s; }
+ .beh-conv-rate { font-family: 'JetBrains Mono', monospace; font-size: 11px; width: 42px; text-align: right; flex-shrink: 0; }
+ .zone-revenue-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid rgba(31,41,55,0.5); }
+ .zone-revenue-row:last-child { border-bottom: none; }
 </style>
 </head>
 <body>
 
 <!-- SIDEBAR -->
 <nav id="sidebar">
-  <div class="sb-logo">
-    <div class="brand">IntelliShelf</div>
-    <div class="tagline">Retail Behavioral Analytics</div>
+ <div class="sb-logo">
+  <div class="brand">IntelliShelf</div>
+  <div class="tagline">Retail Behavioral Analytics</div>
+ </div>
+ <div class="sb-nav">
+  <div class="nav-item active" data-page="overview">
+   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+   Live Overview
   </div>
-  <div class="sb-nav">
-    <div class="nav-item active" data-page="overview">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
-      Live Overview
-    </div>
-    <div class="nav-item" data-page="analytics">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-      Zone Analytics
-    </div>
-    <div class="nav-item" data-page="heatmap">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></svg>
-      Hesitation Map
-    </div>
-    <div class="nav-item" data-page="ml">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 0 1 10 10"/><path d="M12 2a10 10 0 0 0-10 10"/><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
-      Insights
-    </div>
-    <div class="nav-item" data-page="billing">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-      Billing Correlation
-    </div>
+  <div class="nav-item" data-page="analytics">
+   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+   Zone Analytics
   </div>
-  <div class="sb-footer">
-    <div class="sys-status">
-      <div class="pulse-dot"></div>
-      <span class="sys-label">System Online</span>
-    </div>
-    <div id="live-clock">--:--:--</div>
+  <div class="nav-item" data-page="heatmap">
+   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></svg>
+   Hesitation Map
   </div>
+  <div class="nav-item" data-page="ml">
+   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 0 1 10 10"/><path d="M12 2a10 10 0 0 0-10 10"/><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
+   Insights
+  </div>
+  <div class="nav-item" data-page="billing">
+   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+   Billing Correlation
+  </div>
+ </div>
+ <div class="sb-footer">
+  <div class="sys-status"><div class="pulse-dot"></div><span class="sys-label">System Online</span></div>
+  <div id="live-clock">--:--:--</div>
+ </div>
 </nav>
 
 <!-- MAIN -->
 <main id="main">
 
-  <!-- PAGE 1: LIVE OVERVIEW -->
-  <div class="page active" id="page-overview">
-    <div class="page-header">
-      <div>
-        <div class="page-title">Live Overview</div>
-        <div class="page-sub">Real-time shelf behavioral monitoring · All zones</div>
-      </div>
-      <div class="live-badge"><div class="pulse-dot" style="width:7px;height:7px"></div> LIVE</div>
+ <!-- PAGE 1: LIVE OVERVIEW -->
+ <div class="page active" id="page-overview">
+  <div class="page-header">
+   <div><div class="page-title">Live Overview</div><div class="page-sub">Real-time shelf behavioral monitoring · All zones</div></div>
+   <div class="live-badge"><div class="pulse-dot" style="width:7px;height:7px"></div> LIVE</div>
+  </div>
+  <div class="grid-4">
+   <div class="stat-card">
+    <div class="stat-top"><div class="stat-icon" style="background:rgba(0,212,255,0.1)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#00d4ff" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg></div><span class="stat-trend trend-up">↑ 5.4%</span></div>
+    <div class="stat-val" id="stat-sessions">148</div><div class="stat-label">Total Sessions Today</div>
+   </div>
+   <div class="stat-card">
+    <div class="stat-top"><div class="stat-icon" style="background:rgba(245,158,11,0.1)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div><span class="stat-trend trend-down"></span></div>
+    <div class="stat-val" style="color:var(--amber)" id="stat-hesitations">5</div><div class="stat-label">Active Hesitations</div>
+   </div>
+   <div class="stat-card">
+    <div class="stat-top"><div class="stat-icon" style="background:rgba(16,185,129,0.1)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2"><polyline points="20,6 9,17 4,12"/></svg></div><span class="stat-trend trend-up"></span></div>
+    <div class="stat-val" style="color:var(--green)" id="stat-convrate">41.2%</div><div class="stat-label">Overall Conversion Rate</div>
+   </div>
+   <div class="stat-card">
+    <div class="stat-top"><div class="stat-icon" style="background:rgba(239,68,68,0.1)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div><span class="stat-trend trend-down"></span></div>
+    <div class="stat-val" style="color:var(--red);font-size:20px" id="stat-worstzone">Zone B</div><div class="stat-label">Most Problematic Zone</div>
+   </div>
+  </div>
+  <div class="grid-3">
+   <div class="zone-card" id="zcard-A">
+    <div class="zone-head"><div><div class="zone-name">Zone A</div><div class="zone-cat">Snacks</div></div><div class="status-badge"><div class="status-dot active" id="zdot-A"></div><span id="zstatus-A" style="color:var(--green)">ACTIVE</span></div></div>
+    <div class="dwell-timer" id="zdwell-A">⏱ Dwell: 14s</div>
+    <div style="margin-bottom:12px"><span class="beh-badge beh-FOCUSED_INTEREST" id="zbeh-A">FOCUSED_INTEREST</span></div>
+    <div class="zone-metrics">
+     <div class="zm-item"><div class="zm-val" id="zsess-A">47</div><div class="zm-label">Sessions</div></div>
+     <div class="zm-item"><div class="zm-val" style="color:var(--amber)" id="zhes-A">12</div><div class="zm-label">Hesitations</div></div>
+     <div class="zm-item"><div class="zm-val" style="color:var(--green)" id="zconv-A">19</div><div class="zm-label">Conversions</div></div>
     </div>
-
-    <!-- Top Stats -->
-    <div class="grid-4">
-      <div class="stat-card">
-        <div class="stat-top">
-          <div class="stat-icon" style="background:rgba(0,212,255,0.1)">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#00d4ff" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg>
-          </div>
-          <span class="stat-trend trend-up">↑ 5.4%</span>
-        </div>
-        <div class="stat-val" id="stat-sessions">148</div>
-        <div class="stat-label">Total Sessions Today</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-top">
-          <div class="stat-icon" style="background:rgba(245,158,11,0.1)">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-          </div>
-          <span class="stat-trend trend-down"></span>
-        </div>
-        <div class="stat-val" style="color:var(--amber)" id="stat-hesitations">5</div>
-        <div class="stat-label">Active Hesitations</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-top">
-          <div class="stat-icon" style="background:rgba(16,185,129,0.1)">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2"><polyline points="20,6 9,17 4,12"/></svg>
-          </div>
-          <span class="stat-trend trend-up"></span>
-        </div>
-        <div class="stat-val" style="color:var(--green)" id="stat-convrate">41.2%</div>
-        <div class="stat-label">Overall Conversion Rate</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-top">
-          <div class="stat-icon" style="background:rgba(239,68,68,0.1)">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-          </div>
-          <span class="stat-trend trend-down"></span>
-        </div>
-        <div class="stat-val" style="color:var(--red);font-size:20px" id="stat-worstzone">Zone A</div>
-        <div class="stat-label">Most Problematic Zone</div>
-      </div>
+    <div class="hes-bar-wrap"><div class="hes-bar-label"><span>Hesitation Rate</span><span id="zhrate-A">25.5%</span></div><div class="hes-bar-bg"><div class="hes-bar-fill" id="zhbar-A" style="width:25.5%;background:var(--amber)"></div></div></div>
+   </div>
+   <div class="zone-card" id="zcard-B">
+    <div class="zone-head"><div><div class="zone-name">Zone B</div><div class="zone-cat">Beverages</div></div><div class="status-badge"><div class="status-dot idle" id="zdot-B"></div><span id="zstatus-B" style="color:var(--text3)">IDLE</span></div></div>
+    <div class="dwell-timer" id="zdwell-B" style="color:var(--text3)">⏱ No active session</div>
+    <div style="margin-bottom:12px"><span class="beh-badge beh-PROBABLE_HESITATION" id="zbeh-B">PROBABLE_HESITATION</span></div>
+    <div class="zone-metrics">
+     <div class="zm-item"><div class="zm-val" id="zsess-B">63</div><div class="zm-label">Sessions</div></div>
+     <div class="zm-item"><div class="zm-val" style="color:var(--amber)" id="zhes-B">29</div><div class="zm-label">Hesitations</div></div>
+     <div class="zm-item"><div class="zm-val" style="color:var(--green)" id="zconv-B">18</div><div class="zm-label">Conversions</div></div>
     </div>
-
-    <!-- Zone Cards -->
-    <div class="grid-3">
-      <div class="zone-card" id="zcard-A">
-        <div class="zone-head">
-          <div>
-            <div class="zone-name">Zone A</div>
-            <div class="zone-cat">Snacks</div>
-          </div>
-          <div class="status-badge">
-            <div class="status-dot active" id="zdot-A"></div>
-            <span id="zstatus-A" style="color:var(--green)">ACTIVE</span>
-          </div>
-        </div>
-        <div class="dwell-timer" id="zdwell-A">⏱ Dwell: 14s</div>
-        <div style="margin-bottom:12px"><span class="beh-badge beh-FOCUSED_INTEREST" id="zbeh-A">FOCUSED_INTEREST</span></div>
-        <div class="zone-metrics">
-          <div class="zm-item"><div class="zm-val" id="zsess-A">47</div><div class="zm-label">Sessions</div></div>
-          <div class="zm-item"><div class="zm-val" style="color:var(--amber)" id="zhes-A">12</div><div class="zm-label">Hesitations</div></div>
-          <div class="zm-item"><div class="zm-val" style="color:var(--green)" id="zconv-A">19</div><div class="zm-label">Conversions</div></div>
-        </div>
-        <div class="hes-bar-wrap">
-          <div class="hes-bar-label"><span>Hesitation Rate</span><span id="zhrate-A">25.5%</span></div>
-          <div class="hes-bar-bg"><div class="hes-bar-fill" id="zhbar-A" style="width:25.5%;background:var(--amber)"></div></div>
-        </div>
-      </div>
-
-      <div class="zone-card" id="zcard-B">
-        <div class="zone-head">
-          <div>
-            <div class="zone-name">Zone B</div>
-            <div class="zone-cat">Beverages</div>
-          </div>
-          <div class="status-badge">
-            <div class="status-dot idle" id="zdot-B"></div>
-            <span id="zstatus-B" style="color:var(--text3)">IDLE</span>
-          </div>
-        </div>
-        <div class="dwell-timer" id="zdwell-B" style="color:var(--text3)">⏱ No active session</div>
-        <div style="margin-bottom:12px"><span class="beh-badge beh-PROBABLE_HESITATION" id="zbeh-B">PROBABLE_HESITATION</span></div>
-        <div class="zone-metrics">
-          <div class="zm-item"><div class="zm-val" id="zsess-B">63</div><div class="zm-label">Sessions</div></div>
-          <div class="zm-item"><div class="zm-val" style="color:var(--amber)" id="zhes-B">29</div><div class="zm-label">Hesitations</div></div>
-          <div class="zm-item"><div class="zm-val" style="color:var(--green)" id="zconv-B">18</div><div class="zm-label">Conversions</div></div>
-        </div>
-        <div class="hes-bar-wrap">
-          <div class="hes-bar-label"><span>Hesitation Rate</span><span id="zhrate-B">46.0%</span></div>
-          <div class="hes-bar-bg"><div class="hes-bar-fill" id="zhbar-B" style="width:46%;background:var(--red)"></div></div>
-        </div>
-      </div>
-
-      <div class="zone-card" id="zcard-C">
-        <div class="zone-head">
-          <div>
-            <div class="zone-name">Zone C</div>
-            <div class="zone-cat">Chocolates</div>
-          </div>
-          <div class="status-badge">
-            <div class="status-dot idle" id="zdot-C"></div>
-            <span id="zstatus-C" style="color:var(--text3)">IDLE</span>
-          </div>
-        </div>
-        <div class="dwell-timer" id="zdwell-C" style="color:var(--text3)">⏱ No active session</div>
-        <div style="margin-bottom:12px"><span class="beh-badge beh-EXPLORATORY_BROWSING" id="zbeh-C">EXPLORATORY_BROWSING</span></div>
-        <div class="zone-metrics">
-          <div class="zm-item"><div class="zm-val" id="zsess-C">38</div><div class="zm-label">Sessions</div></div>
-          <div class="zm-item"><div class="zm-val" style="color:var(--amber)" id="zhes-C">8</div><div class="zm-label">Hesitations</div></div>
-          <div class="zm-item"><div class="zm-val" style="color:var(--green)" id="zconv-C">22</div><div class="zm-label">Conversions</div></div>
-        </div>
-        <div class="hes-bar-wrap">
-          <div class="hes-bar-label"><span>Hesitation Rate</span><span id="zhrate-C">21.1%</span></div>
-          <div class="hes-bar-bg"><div class="hes-bar-fill" id="zhbar-C" style="width:21.1%;background:var(--green)"></div></div>
-        </div>
-      </div>
+    <div class="hes-bar-wrap"><div class="hes-bar-label"><span>Hesitation Rate</span><span id="zhrate-B">46.0%</span></div><div class="hes-bar-bg"><div class="hes-bar-fill" id="zhbar-B" style="width:46%;background:var(--red)"></div></div></div>
+   </div>
+   <div class="zone-card" id="zcard-C">
+    <div class="zone-head"><div><div class="zone-name">Zone C</div><div class="zone-cat">Chocolates</div></div><div class="status-badge"><div class="status-dot idle" id="zdot-C"></div><span id="zstatus-C" style="color:var(--text3)">IDLE</span></div></div>
+    <div class="dwell-timer" id="zdwell-C" style="color:var(--text3)">⏱ No active session</div>
+    <div style="margin-bottom:12px"><span class="beh-badge beh-EXPLORATORY_BROWSING" id="zbeh-C">EXPLORATORY_BROWSING</span></div>
+    <div class="zone-metrics">
+     <div class="zm-item"><div class="zm-val" id="zsess-C">38</div><div class="zm-label">Sessions</div></div>
+     <div class="zm-item"><div class="zm-val" style="color:var(--amber)" id="zhes-C">8</div><div class="zm-label">Hesitations</div></div>
+     <div class="zm-item"><div class="zm-val" style="color:var(--green)" id="zconv-C">22</div><div class="zm-label">Conversions</div></div>
     </div>
+    <div class="hes-bar-wrap"><div class="hes-bar-label"><span>Hesitation Rate</span><span id="zhrate-C">21.1%</span></div><div class="hes-bar-bg"><div class="hes-bar-fill" id="zhbar-C" style="width:21.1%;background:var(--green)"></div></div></div>
+   </div>
+  </div>
+  <div class="card">
+   <div class="card-title">Live Activity Feed</div>
+   <div class="feed-scroll">
+    <table class="feed-table">
+     <thead><tr><th>Time</th><th>Zone</th><th>Behavior</th><th>Dwell</th><th>Interactions</th></tr></thead>
+     <tbody id="feed-body"></tbody>
+    </table>
+   </div>
+  </div>
+ </div>
 
-    <!-- Activity Feed -->
-    <div class="card">
-      <div class="card-title">Live Activity Feed</div>
-      <div class="feed-scroll">
-        <table class="feed-table">
-          <thead><tr><th>Time</th><th>Zone</th><th>Behavior</th><th>Dwell</th><th>Interactions</th></tr></thead>
-          <tbody id="feed-body"></tbody>
-        </table>
-      </div>
+ <!-- PAGE 2: ZONE ANALYTICS -->
+ <div class="page" id="page-analytics">
+  <div class="page-header"><div><div class="page-title">Zone Analytics</div><div class="page-sub">Session trends, behavior patterns, zone comparisons</div></div></div>
+  <div class="zone-tabs">
+   <div class="ztab active" data-zone="all">All Zones</div>
+   <div class="ztab" data-zone="A">Zone A</div>
+   <div class="ztab" data-zone="B">Zone B</div>
+   <div class="ztab" data-zone="C">Zone C</div>
+  </div>
+  <div id="zone-all">
+   <div class="grid-2">
+    <div class="card"><div class="chart-title">Session Activity by Hour — All Zones</div><div class="chart-wrap"><canvas id="hourly-chart"></canvas></div></div>
+    <div class="card"><div class="chart-title">Hesitation & Conversion Trend — 5 Day View</div><div class="chart-wrap"><canvas id="trend-chart"></canvas></div></div>
+   </div>
+   <div class="card">
+    <div class="card-title">Zone Comparison</div>
+    <table class="data-table">
+     <thead><tr><th>Zone</th><th>Sessions</th><th>Hesitations</th><th>Conversions</th><th>Hesitation Rate</th><th>Conversion Rate</th><th>Avg Dwell</th></tr></thead>
+     <tbody id="zone-comparison-body">
+      <tr><td><span style="color:var(--cyan);font-family:'JetBrains Mono',monospace">Zone A — Snacks</span></td><td>47</td><td>12</td><td>19</td><td><span class="rate-val rate-mid">25.5%</span></td><td><span class="rate-val rate-ok">40.4%</span></td><td><span style="font-family:'JetBrains Mono',monospace">18.3s</span></td></tr>
+      <tr><td><span style="color:var(--cyan);font-family:'JetBrains Mono',monospace">Zone B — Beverages</span></td><td>63</td><td>29</td><td>18</td><td><span class="rate-val rate-high">46.0%</span></td><td><span class="rate-val rate-mid">28.6%</span></td><td><span style="font-family:'JetBrains Mono',monospace">24.7s</span></td></tr>
+      <tr><td><span style="color:var(--cyan);font-family:'JetBrains Mono',monospace">Zone C — Chocolates</span></td><td>38</td><td>8</td><td>22</td><td><span class="rate-val rate-ok">21.1%</span></td><td><span class="rate-val rate-ok">57.9%</span></td><td><span style="font-family:'JetBrains Mono',monospace">12.1s</span></td></tr>
+     </tbody>
+    </table>
+   </div>
+  </div>
+  <div id="zone-individual" style="display:none">
+   <div class="grid-4" id="zone-metric-cards"></div>
+   <div class="grid-2">
+    <div class="card"><div class="chart-title" id="zone-hourly-title">Hourly Activity</div><div class="chart-wrap"><canvas id="zone-hourly-chart"></canvas></div></div>
+    <div class="card"><div class="chart-title" id="zone-pie-title">Behavior Distribution</div><div class="chart-wrap"><canvas id="zone-pie-chart"></canvas></div></div>
+   </div>
+   <div class="card">
+    <div class="card-title" id="zone-session-title">Recent Sessions</div>
+    <table class="data-table"><thead><tr><th>Time</th><th>Dwell</th><th>Interactions</th><th>Density</th><th>Behavior</th></tr></thead><tbody id="zone-session-body"></tbody></table>
+   </div>
+  </div>
+ </div>
+
+ <!-- PAGE 3: HESITATION MAP -->
+ <div class="page" id="page-heatmap">
+  <div class="page-header"><div><div class="page-title">Hesitation Map</div><div class="page-sub">Visual shelf layout with risk heatmap overlay</div></div></div>
+  <div class="card" style="margin-bottom:20px">
+   <div class="card-title">Shelf Layout — Hesitation Heatmap</div>
+   <div class="shelf-container">
+    <div class="shelf-zone" style="background:rgba(245,158,11,0.35)">
+     <div class="shelf-tooltip"><div class="tt-row"><span>Sessions</span><span class="tt-val">47</span></div><div class="tt-row"><span>Hesitations</span><span class="tt-val">12</span></div><div class="tt-row"><span>Conversion</span><span class="tt-val rate-ok">40.4%</span></div><div class="tt-row"><span>Avg Dwell</span><span class="tt-val">18.3s</span></div></div>
+     <div class="sz-label">Zone A</div><div class="sz-cat">Snacks</div><div class="sz-rate">25.5%</div><div class="sz-sub">Hesitation Rate</div>
     </div>
+    <div class="shelf-zone" style="background:rgba(239,68,68,0.45)">
+     <div class="shelf-tooltip"><div class="tt-row"><span>Sessions</span><span class="tt-val">63</span></div><div class="tt-row"><span>Hesitations</span><span class="tt-val">29</span></div><div class="tt-row"><span>Conversion</span><span class="tt-val rate-mid">28.6%</span></div><div class="tt-row"><span>Avg Dwell</span><span class="tt-val">24.7s</span></div></div>
+     <div class="sz-label">Zone B</div><div class="sz-cat">Beverages</div><div class="sz-rate">46.0%</div><div class="sz-sub">Hesitation Rate</div>
+    </div>
+    <div class="shelf-zone" style="background:rgba(16,185,129,0.30)">
+     <div class="shelf-tooltip"><div class="tt-row"><span>Sessions</span><span class="tt-val">38</span></div><div class="tt-row"><span>Hesitations</span><span class="tt-val">8</span></div><div class="tt-row"><span>Conversion</span><span class="tt-val rate-ok">57.9%</span></div><div class="tt-row"><span>Avg Dwell</span><span class="tt-val">12.1s</span></div></div>
+     <div class="sz-label">Zone C</div><div class="sz-cat">Chocolates</div><div class="sz-rate">21.1%</div><div class="sz-sub">Hesitation Rate</div>
+    </div>
+   </div>
+   <div style="display:flex;gap:20px;margin-top:14px;font-size:11px;color:var(--text3)">
+    <span>🟢 &lt;25% — Low Risk</span><span>🟡 25–40% — Medium Risk</span><span>🔴 &gt;40% — High Risk</span>
+    <span style="margin-left:auto;font-family:'JetBrains Mono',monospace;color:var(--text2)">Hover zones for details</span>
+   </div>
+  </div>
+  <div class="grid-3" id="risk-cards-container">
+   <div class="risk-card"><div class="risk-badge risk-MEDIUM">MEDIUM RISK</div><div class="risk-title">Zone A — Snacks</div><div style="font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:700;color:var(--amber);margin-bottom:8px">25.5%</div><div class="risk-concern">Moderate hesitation with acceptable conversion.</div><div class="risk-action">→ Review product placement; consider reducing adjacent SKUs</div></div>
+   <div class="risk-card"><div class="risk-badge risk-HIGH">HIGH RISK</div><div class="risk-title">Zone B — Beverages</div><div style="font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:700;color:var(--red);margin-bottom:8px">46.0%</div><div class="risk-concern">High interaction, low conversion suggests decision paralysis.</div><div class="risk-action">→ Reduce SKU count, improve shelf signage</div></div>
+   <div class="risk-card"><div class="risk-badge risk-LOW">LOW RISK</div><div class="risk-title">Zone C — Chocolates</div><div style="font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:700;color:var(--green);margin-bottom:8px">21.1%</div><div class="risk-concern">Excellent conversion performance.</div><div class="risk-action">→ Maintain current layout; use as reference for other zones</div></div>
+  </div>
+ </div>
+
+ <!-- PAGE 4: ML INSIGHTS -->
+ <div class="page" id="page-ml">
+  <div class="page-header"><div><div class="page-title">Insights</div><div class="page-sub">Behavioral pattern analysis</div></div></div>
+  <div id="insight-cards-wrap"></div>
+  <div class="section-sep"></div>
+  <div class="card" style="margin-bottom:20px">
+   <div class="card-title">Behavior Pattern Summary</div>
+   <table class="data-table">
+    <thead><tr><th>Behavior</th><th>Zone A</th><th>Zone B</th><th>Zone C</th><th>Interpretation</th></tr></thead>
+    <tbody>
+     <tr><td><span class="beh-badge beh-EXPLORATORY_BROWSING">Exploratory Browsing</span></td><td>2</td><td>5</td><td>0</td><td style="color:var(--text2);font-size:11px">Customers passing through without intent</td></tr>
+     <tr><td><span class="beh-badge beh-FOCUSED_INTEREST">Focused Interest</span></td><td>14</td><td>11</td><td>8</td><td style="color:var(--text2);font-size:11px">Serious consideration, high purchase potential</td></tr>
+     <tr><td><span class="beh-badge beh-PROBABLE_HESITATION">Probable Hesitation</span></td><td>12</td><td>29</td><td>8</td><td style="color:var(--text2);font-size:11px">Decision difficulty, shelf friction present</td></tr>
+     <tr><td><span class="beh-badge beh-SUCCESSFUL_CONVERSION">Successful Conversion</span></td><td>19</td><td>18</td><td>22</td><td style="color:var(--text2);font-size:11px">Purchase completed — positive outcome</td></tr>
+    </tbody>
+   </table>
+  </div>
+  <div class="card">
+   <div class="card-title">Feature Importance — ML Classification Drivers</div>
+   <div style="padding-top:6px">
+    <div class="fi-row"><span class="fi-label">Dwell Time</span><div class="fi-bar-bg"><div class="fi-bar-fill" style="width:28%"></div></div><span class="fi-pct">28%</span></div>
+    <div class="fi-row"><span class="fi-label">Interaction Count</span><div class="fi-bar-bg"><div class="fi-bar-fill" style="width:24%"></div></div><span class="fi-pct">24%</span></div>
+    <div class="fi-row"><span class="fi-label">Interaction Density</span><div class="fi-bar-bg"><div class="fi-bar-fill" style="width:19%"></div></div><span class="fi-pct">19%</span></div>
+    <div class="fi-row"><span class="fi-label">Zone Switching</span><div class="fi-bar-bg"><div class="fi-bar-fill" style="width:14%"></div></div><span class="fi-pct">14%</span></div>
+    <div class="fi-row"><span class="fi-label">Pickup/Return Pattern</span><div class="fi-bar-bg"><div class="fi-bar-fill" style="width:10%"></div></div><span class="fi-pct">10%</span></div>
+    <div class="fi-row"><span class="fi-label">Billing Outcome</span><div class="fi-bar-bg"><div class="fi-bar-fill" style="width:5%"></div></div><span class="fi-pct">5%</span></div>
+   </div>
+  </div>
+ </div>
+
+ <!-- PAGE 5: BILLING CORRELATION -->
+ <div class="page" id="page-billing">
+  <div class="page-header">
+   <div>
+    <div class="page-title">Billing Correlation</div>
+    <div class="page-sub">Presence → Interaction → Purchase conversion funnel · Sensor-POS correlation analysis</div>
+   </div>
+   <div class="conv-window-badge" id="corr-window-badge">⏱ 3-min correlation window</div>
   </div>
 
-  <!-- PAGE 2: ZONE ANALYTICS -->
-  <div class="page" id="page-analytics">
-    <div class="page-header">
-      <div>
-        <div class="page-title">Zone Analytics</div>
-        <div class="page-sub">Session trends, behavior patterns, zone comparisons</div>
-      </div>
-    </div>
-    <div class="zone-tabs">
-      <div class="ztab active" data-zone="all">All Zones</div>
-      <div class="ztab" data-zone="A">Zone A</div>
-      <div class="ztab" data-zone="B">Zone B</div>
-      <div class="ztab" data-zone="C">Zone C</div>
-    </div>
-
-    <!-- All Zones view -->
-    <div id="zone-all">
-      <div class="grid-2">
-        <div class="card">
-          <div class="chart-title">Session Activity by Hour — All Zones</div>
-          <div class="chart-wrap"><canvas id="hourly-chart"></canvas></div>
-        </div>
-        <div class="card">
-          <div class="chart-title">Hesitation & Conversion Trend — 5 Day View</div>
-          <div class="chart-wrap"><canvas id="trend-chart"></canvas></div>
-        </div>
-      </div>
-      <div class="card">
-        <div class="card-title">Zone Comparison</div>
-        <table class="data-table">
-          <thead><tr><th>Zone</th><th>Sessions</th><th>Hesitations</th><th>Conversions</th><th>Hesitation Rate</th><th>Conversion Rate</th><th>Avg Dwell</th></tr></thead>
-          <tbody id="zone-comparison-body">
-            <tr>
-              <td><span style="color:var(--cyan);font-family:'JetBrains Mono',monospace">Zone A — Snacks</span></td>
-              <td>47</td><td>12</td><td>19</td>
-              <td><span class="rate-val rate-mid">25.5%</span></td>
-              <td><span class="rate-val rate-ok">40.4%</span></td>
-              <td><span style="font-family:'JetBrains Mono',monospace">18.3s</span></td>
-            </tr>
-            <tr>
-              <td><span style="color:var(--cyan);font-family:'JetBrains Mono',monospace">Zone B — Beverages</span></td>
-              <td>63</td><td>29</td><td>18</td>
-              <td><span class="rate-val rate-high">46.0%</span></td>
-              <td><span class="rate-val rate-mid">28.6%</span></td>
-              <td><span style="font-family:'JetBrains Mono',monospace">24.7s</span></td>
-            </tr>
-            <tr>
-              <td><span style="color:var(--cyan);font-family:'JetBrains Mono',monospace">Zone C — Chocolates</span></td>
-              <td>38</td><td>8</td><td>22</td>
-              <td><span class="rate-val rate-ok">21.1%</span></td>
-              <td><span class="rate-val rate-ok">57.9%</span></td>
-              <td><span style="font-family:'JetBrains Mono',monospace">12.1s</span></td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- Individual zone view -->
-    <div id="zone-individual" style="display:none">
-      <div class="grid-4" id="zone-metric-cards"></div>
-      <div class="grid-2">
-        <div class="card">
-          <div class="chart-title" id="zone-hourly-title">Hourly Activity</div>
-          <div class="chart-wrap"><canvas id="zone-hourly-chart"></canvas></div>
-        </div>
-        <div class="card">
-          <div class="chart-title" id="zone-pie-title">Behavior Distribution</div>
-          <div class="chart-wrap"><canvas id="zone-pie-chart"></canvas></div>
-        </div>
-      </div>
-      <div class="card">
-        <div class="card-title" id="zone-session-title">Recent Sessions</div>
-        <table class="data-table">
-          <thead><tr><th>Time</th><th>Dwell</th><th>Interactions</th><th>Density</th><th>Behavior</th></tr></thead>
-          <tbody id="zone-session-body"></tbody>
-        </table>
-      </div>
-    </div>
+  <!-- Top KPI row — filled by API -->
+  <div class="grid-4" id="billing-kpi-row">
+   <div class="billing-stat-card"><div class="billing-stat-val" style="color:var(--cyan)" id="bkpi-presence">—</div><div class="billing-stat-label">Total Presences</div><div class="billing-stat-sub">sensor sessions</div></div>
+   <div class="billing-stat-card"><div class="billing-stat-val" style="color:var(--blue)" id="bkpi-interactions">—</div><div class="billing-stat-label">Active Interactions</div><div class="billing-stat-sub" id="bkpi-int-rate">—% of presences</div></div>
+   <div class="billing-stat-card"><div class="billing-stat-val" style="color:var(--green)" id="bkpi-conversions">—</div><div class="billing-stat-label">Correlated Purchases</div><div class="billing-stat-sub" id="bkpi-conv-rate">—% conversion</div></div>
+   <div class="billing-stat-card"><div class="billing-stat-val" style="color:var(--amber)" id="bkpi-revenue">—</div><div class="billing-stat-label">Total Revenue</div><div class="billing-stat-sub">across all zones</div></div>
   </div>
 
-  <!-- PAGE 3: HESITATION MAP -->
-  <div class="page" id="page-heatmap">
-    <div class="page-header">
-      <div>
-        <div class="page-title">Hesitation Map</div>
-        <div class="page-sub">Visual shelf layout with risk heatmap overlay</div>
-      </div>
-    </div>
-    <div class="card" style="margin-bottom:20px">
-      <div class="card-title">Shelf Layout — Hesitation Heatmap</div>
-      <div class="shelf-container">
-        <div class="shelf-zone" style="background:rgba(245,158,11,0.35)">
-          <div class="shelf-tooltip">
-            <div class="tt-row"><span>Sessions</span><span class="tt-val">47</span></div>
-            <div class="tt-row"><span>Hesitations</span><span class="tt-val">12</span></div>
-            <div class="tt-row"><span>Conversion</span><span class="tt-val rate-ok">40.4%</span></div>
-            <div class="tt-row"><span>Avg Dwell</span><span class="tt-val">18.3s</span></div>
-          </div>
-          <div class="sz-label">Zone A</div>
-          <div class="sz-cat">Snacks</div>
-          <div class="sz-rate">25.5%</div>
-          <div class="sz-sub">Hesitation Rate</div>
-        </div>
-        <div class="shelf-zone" style="background:rgba(239,68,68,0.45)">
-          <div class="shelf-tooltip">
-            <div class="tt-row"><span>Sessions</span><span class="tt-val">63</span></div>
-            <div class="tt-row"><span>Hesitations</span><span class="tt-val">29</span></div>
-            <div class="tt-row"><span>Conversion</span><span class="tt-val rate-mid">28.6%</span></div>
-            <div class="tt-row"><span>Avg Dwell</span><span class="tt-val">24.7s</span></div>
-          </div>
-          <div class="sz-label">Zone B</div>
-          <div class="sz-cat">Beverages</div>
-          <div class="sz-rate">46.0%</div>
-          <div class="sz-sub">Hesitation Rate</div>
-        </div>
-        <div class="shelf-zone" style="background:rgba(16,185,129,0.30)">
-          <div class="shelf-tooltip">
-            <div class="tt-row"><span>Sessions</span><span class="tt-val">38</span></div>
-            <div class="tt-row"><span>Hesitations</span><span class="tt-val">8</span></div>
-            <div class="tt-row"><span>Conversion</span><span class="tt-val rate-ok">57.9%</span></div>
-            <div class="tt-row"><span>Avg Dwell</span><span class="tt-val">12.1s</span></div>
-          </div>
-          <div class="sz-label">Zone C</div>
-          <div class="sz-cat">Chocolates</div>
-          <div class="sz-rate">21.1%</div>
-          <div class="sz-sub">Hesitation Rate</div>
-        </div>
-      </div>
-      <div style="display:flex;gap:20px;margin-top:14px;font-size:11px;color:var(--text3)">
-        <span>🟢 &lt;25% — Low Risk</span>
-        <span>🟡 25–40% — Medium Risk</span>
-        <span>🔴 &gt;40% — High Risk</span>
-        <span style="margin-left:auto;font-family:'JetBrains Mono',monospace;color:var(--text2)">Hover zones for details</span>
-      </div>
-    </div>
-    <div class="grid-3" id="risk-cards-container">
-      <div class="risk-card">
-        <div class="risk-badge risk-MEDIUM">MEDIUM RISK</div>
-        <div class="risk-title">Zone A — Snacks</div>
-        <div style="font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:700;color:var(--amber);margin-bottom:8px">25.5%</div>
-        <div class="risk-concern">Moderate hesitation with acceptable conversion. Occasional decision friction observed.</div>
-        <div class="risk-action">→ Review product placement; consider reducing adjacent SKUs</div>
-      </div>
-      <div class="risk-card">
-        <div class="risk-badge risk-HIGH">HIGH RISK</div>
-        <div class="risk-title">Zone B — Beverages</div>
-        <div style="font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:700;color:var(--red);margin-bottom:8px">46.0%</div>
-        <div class="risk-concern">High interaction, low conversion suggests decision paralysis. Too many SKUs overwhelming customers.</div>
-        <div class="risk-action">→ Reduce SKU count, improve shelf signage and product labels</div>
-      </div>
-      <div class="risk-card">
-        <div class="risk-badge risk-LOW">LOW RISK</div>
-        <div class="risk-title">Zone C — Chocolates</div>
-        <div style="font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:700;color:var(--green);margin-bottom:8px">21.1%</div>
-        <div class="risk-concern">Excellent conversion performance. Shelf arrangement and product visibility are optimal.</div>
-        <div class="risk-action">→ Maintain current layout; use as reference for other zones</div>
-      </div>
-    </div>
+  <div class="grid-2">
+   <!-- Funnel -->
+   <div class="card">
+    <div class="card-title">Conversion Funnel</div>
+    <div id="funnel-wrap"><div class="loading-placeholder">Loading billing data...</div></div>
+   </div>
+   <!-- Daily trend chart -->
+   <div class="card">
+    <div class="card-title">Daily Purchase & Revenue Trend</div>
+    <div class="chart-wrap"><canvas id="daily-conv-chart"></canvas></div>
+   </div>
   </div>
 
-  <!-- PAGE 4: ML INSIGHTS -->
-  <div class="page" id="page-ml">
-    <div class="page-header">
-      <div>
-        <div class="page-title">Insights</div>
-        <div class="page-sub">Behavioral pattern analysis</div>
-      </div>
-    </div>
-
-    <div id="insight-cards-wrap"></div>
-
-    <div class="section-sep"></div>
-    <div class="card" style="margin-bottom:20px">
-      <div class="card-title">Behavior Pattern Summary</div>
-      <table class="data-table">
-        <thead><tr><th>Behavior</th><th>Zone A</th><th>Zone B</th><th>Zone C</th><th>Interpretation</th></tr></thead>
-        <tbody>
-          <tr><td><span class="beh-badge beh-EXPLORATORY_BROWSING">Exploratory Browsing</span></td><td>2</td><td>5</td><td>0</td><td style="color:var(--text2);font-size:11px">Customers passing through without intent</td></tr>
-          <tr><td><span class="beh-badge beh-FOCUSED_INTEREST">Focused Interest</span></td><td>14</td><td>11</td><td>8</td><td style="color:var(--text2);font-size:11px">Serious consideration, high purchase potential</td></tr>
-          <tr><td><span class="beh-badge beh-PROBABLE_HESITATION">Probable Hesitation</span></td><td>12</td><td>29</td><td>8</td><td style="color:var(--text2);font-size:11px">Decision difficulty, shelf friction present</td></tr>
-          <tr><td><span class="beh-badge beh-SUCCESSFUL_CONVERSION">Successful Conversion</span></td><td>19</td><td>18</td><td>22</td><td style="color:var(--text2);font-size:11px">Purchase completed — positive outcome</td></tr>
-        </tbody>
-      </table>
-    </div>
-
-    <div class="card">
-      <div class="card-title">Feature Importance — ML Classification Drivers</div>
-      <div style="padding-top:6px">
-        <div class="fi-row"><span class="fi-label">Dwell Time</span><div class="fi-bar-bg"><div class="fi-bar-fill" style="width:28%"></div></div><span class="fi-pct">28%</span></div>
-        <div class="fi-row"><span class="fi-label">Interaction Count</span><div class="fi-bar-bg"><div class="fi-bar-fill" style="width:24%"></div></div><span class="fi-pct">24%</span></div>
-        <div class="fi-row"><span class="fi-label">Interaction Density</span><div class="fi-bar-bg"><div class="fi-bar-fill" style="width:19%"></div></div><span class="fi-pct">19%</span></div>
-        <div class="fi-row"><span class="fi-label">Zone Switching</span><div class="fi-bar-bg"><div class="fi-bar-fill" style="width:14%"></div></div><span class="fi-pct">14%</span></div>
-        <div class="fi-row"><span class="fi-label">Pickup/Return Pattern</span><div class="fi-bar-bg"><div class="fi-bar-fill" style="width:10%"></div></div><span class="fi-pct">10%</span></div>
-        <div class="fi-row"><span class="fi-label">Billing Outcome</span><div class="fi-bar-bg"><div class="fi-bar-fill" style="width:5%"></div></div><span class="fi-pct">5%</span></div>
-      </div>
-    </div>
+  <!-- Zone-wise conversion efficiency -->
+  <div class="card" style="margin-bottom:20px">
+   <div class="card-title">Zone-wise Conversion Efficiency</div>
+   <table class="data-table">
+    <thead><tr><th>Zone</th><th>Presences</th><th>Interactions</th><th>Purchases</th><th>Revenue</th><th>Avg Order</th><th>Interaction Rate</th><th>Conversion Rate</th></tr></thead>
+    <tbody id="billing-zone-table"><tr><td colspan="8" class="loading-placeholder">Loading...</td></tr></tbody>
+   </table>
   </div>
 
-  <!-- PAGE 5: BILLING CORRELATION -->
-  <div class="page" id="page-billing">
-    <div class="page-header">
-      <div>
-        <div class="page-title">Billing Correlation</div>
-        <div class="page-sub">Presence → Interaction → Purchase conversion funnel analysis</div>
-      </div>
-    </div>
-
-    <div class="grid-2">
-      <div class="card">
-        <div class="card-title">Conversion Funnel</div>
-        <div class="funnel-wrap" id="funnel-wrap">
-          <div class="funnel-stage" style="width:100%;height:80px;background:rgba(0,212,255,0.18);border-radius:6px;margin-bottom:4px">
-            <div class="funnel-label" style="color:var(--cyan)">Presence Detected</div>
-            <div class="funnel-val">148</div>
-            <div class="funnel-pct">100% baseline</div>
-          </div>
-          <div style="text-align:center;font-size:11px;color:var(--text3);margin:2px 0">▼ 75.7% proceed to interaction</div>
-          <div class="funnel-stage" style="width:80%;height:80px;background:rgba(59,130,246,0.2);border-radius:6px;margin-bottom:4px">
-            <div class="funnel-label" style="color:var(--blue)">Active Interaction</div>
-            <div class="funnel-val">112</div>
-            <div class="funnel-pct">75.7% of presence</div>
-          </div>
-          <div style="text-align:center;font-size:11px;color:var(--text3);margin:2px 0">▼ 39.9% complete purchase</div>
-          <div class="funnel-stage" style="width:55%;height:80px;background:rgba(16,185,129,0.22);border-radius:6px">
-            <div class="funnel-label" style="color:var(--green)">Purchase Completed</div>
-            <div class="funnel-val">59</div>
-            <div class="funnel-pct">39.9% of presence</div>
-          </div>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="card-title">Daily Purchase Trend</div>
-        <div class="chart-wrap"><canvas id="daily-conv-chart"></canvas></div>
-      </div>
-    </div>
-
-    <div class="card" style="margin-bottom:20px">
-      <div class="card-title">Zone-wise Conversion Efficiency</div>
-      <table class="data-table">
-        <thead><tr><th>Zone</th><th>Presences</th><th>Interactions</th><th>Purchases</th><th>Interaction Rate</th><th>Conversion Rate</th></tr></thead>
-        <tbody>
-          <tr>
-            <td><span style="color:var(--cyan);font-family:'JetBrains Mono',monospace">Zone A</span></td>
-            <td>47</td><td>38</td><td>19</td>
-            <td><span class="rate-val rate-ok">80.9%</span></td>
-            <td><span class="rate-val rate-ok">40.4%</span></td>
-          </tr>
-          <tr>
-            <td><span style="color:var(--cyan);font-family:'JetBrains Mono',monospace">Zone B</span></td>
-            <td>63</td><td>52</td><td>18</td>
-            <td><span class="rate-val rate-ok">82.5%</span></td>
-            <td><span class="rate-val rate-high">28.6%</span></td>
-          </tr>
-          <tr>
-            <td><span style="color:var(--cyan);font-family:'JetBrains Mono',monospace">Zone C</span></td>
-            <td>38</td><td>30</td><td>22</td>
-            <td><span class="rate-val rate-ok">78.9%</span></td>
-            <td><span class="rate-val rate-ok">57.9%</span></td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <div class="card">
-      <div class="card-title">Interaction vs Purchase Gap — by Zone</div>
-      <div class="chart-wrap"><canvas id="gap-chart"></canvas></div>
-    </div>
+  <div class="grid-2">
+   <!-- Interaction vs purchase gap chart -->
+   <div class="card">
+    <div class="card-title">Interaction vs Purchase Gap — by Zone</div>
+    <div class="chart-wrap"><canvas id="gap-chart"></canvas></div>
+   </div>
+   <!-- Hourly purchase distribution -->
+   <div class="card">
+    <div class="card-title">Hourly Purchase Distribution</div>
+    <div class="chart-wrap"><canvas id="hourly-bill-chart"></canvas></div>
+   </div>
   </div>
+
+  <div class="grid-2">
+   <!-- Top Products per zone -->
+   <div class="card">
+    <div class="card-title">Top Products by Zone</div>
+    <div id="top-products-wrap"><div class="loading-placeholder">Loading...</div></div>
+   </div>
+   <!-- Behavior → Conversion breakdown -->
+   <div class="card">
+    <div class="card-title">Behavior → Conversion Rates</div>
+    <div id="behavior-breakdown-wrap"><div class="loading-placeholder">Loading...</div></div>
+   </div>
+  </div>
+
+ </div><!-- end page-billing -->
+
 </main>
 
 <script>
-  // ── CLOUD API INTEGRATION ──────────────────────────
+// ── CONFIG ──────────────────────────────────────────────────
 const API_BASE = 'https://jewsu7qmc2.execute-api.us-east-1.amazonaws.com/prod';
-// Replace with your actual API Gateway invoke URL
 
-async function loadCloudData() {
-  try {
-    // Fetch summary
-    const summaryRes  = await fetch(`${API_BASE}/summary`);
-    const summaryData = await summaryRes.json();
-
-    if (summaryData.summary) {
-      const summary = summaryData.summary;
-
-      // Calculate totals
-      const totalSessions    = summary.reduce((a,b) => a + b.totalSessions, 0);
-      const totalHesitations = summary.reduce((a,b) => a + b.hesitationCount, 0);
-      const totalConversions = summary.reduce((a,b) => a + b.conversionCount, 0);
-      const overallConvRate  = totalSessions > 0
-        ? (totalConversions / totalSessions * 100).toFixed(1) : 0;
-
-      // Update top stat cards
-      const sessEl = document.getElementById('stat-sessions');
-      if (sessEl) sessEl.textContent = totalSessions;
-      
-      const hesEl = document.getElementById('stat-hesitations');
-      if (hesEl) hesEl.textContent = totalHesitations;
-
-      const convRateEl = document.getElementById('stat-convrate');
-      if (convRateEl) convRateEl.textContent = overallConvRate + '%';
-
-      const worst = summary.reduce((a,b) => 
-        a.hesitationRate > b.hesitationRate ? a : b
-      );
-      const worstEl = document.getElementById('stat-worstzone');
-      if (worstEl) worstEl.textContent = 'Zone ' + worst.zoneId.replace('ZONE_', '');
-
-      const worstLabelEl = document.getElementById('stat-worstzone-label');
-      if (worstLabelEl) worstLabelEl.textContent = worst.hesitationRate + '% Hes';
-      
-
-      // Update zone cards
-      summary.forEach(zone => {
-        const z = zone.zoneId.replace('ZONE_', '');
-
-        zoneData[z].sessions = zone.totalSessions;
-        zoneData[z].hes      = zone.hesitationCount;
-        zoneData[z].conv     = zone.conversionCount;
-        zoneData[z].hesRate  = zone.hesitationRate;
-        zoneData[z].convRate = zone.conversionRate;
-        zoneData[z].avgDwell = zone.avgDwellTime;
-
-        const sessZ  = document.getElementById(`zsess-${z}`);
-        const hesZ   = document.getElementById(`zhes-${z}`);
-        const convZ  = document.getElementById(`zconv-${z}`);
-        const hrateZ = document.getElementById(`zhrate-${z}`); // matches your HTML id
-        const hbarZ  = document.getElementById(`zhbar-${z}`);
-
-        if (sessZ)  sessZ.textContent  = zone.totalSessions;
-        if (hesZ)   hesZ.textContent   = zone.hesitationCount;
-        if (convZ)  convZ.textContent  = zone.conversionCount;
-        if (hrateZ) hrateZ.textContent = zone.hesitationRate + '%';
-
-        if (hbarZ) {
-          hbarZ.style.width      = zone.hesitationRate + '%';
-          hbarZ.style.background =
-            zone.hesitationRate > 40 ? 'var(--red)' :
-            zone.hesitationRate > 25 ? 'var(--amber)' : 'var(--green)';
-        }
-      });
-      renderHeatmap(summary);
-      renderComparisonTable(summary);
-      renderRiskCards(summary);
-    }
-
-    // Fetch feed
-    const feedRes  = await fetch(`${API_BASE}/feed`);
-    const feedData = await feedRes.json();
-
-    if (feedData.feed && feedData.feed.length > 0) {
-      // Replace feedItems with real data
-      feedItems = feedData.feed.map(ev => ({
-        time:  ev.time,
-        zone:  ev.zone.replace('ZONE_', 'Zone '),
-        beh:   ev.behavior,
-        dwell: ev.dwellTime,
-        int:   ev.interactions
-      }));
-      renderFeed();
-      updateZoneCards(feedItems);
-    }
-
-    console.log('Cloud data loaded successfully');
-
-  } catch(e) {
-    console.warn('Cloud fetch failed, using dummy data:', e);
-  }
-}
-
-async function loadChartData() {
-    try {
-        // Fetch hourly
-        const hourlyRes  = await fetch(`${API_BASE}/hourly`);
-        const hourlyJson = await hourlyRes.json();
-
-        if (hourlyJson.hourly && hourlyJson.hourly.length > 0) {
-            const real = hourlyJson.hourly;
-
-            // Update hourlyData array
-            hourlyData.length = 0;
-            real.forEach(d => hourlyData.push(d));
-
-            // If chart already rendered, update it
-            if (hourlyChart) {
-                hourlyChart.data.labels        = hourlyData.map(d => d.hour);
-                hourlyChart.data.datasets[0].data = hourlyData.map(d => d.A);
-                hourlyChart.data.datasets[1].data = hourlyData.map(d => d.B);
-                hourlyChart.data.datasets[2].data = hourlyData.map(d => d.C);
-                hourlyChart.update();
-            }
-        }
-
-        // Fetch trend
-        const trendRes  = await fetch(`${API_BASE}/trend`);
-        const trendJson = await trendRes.json();
-
-        if (trendJson.trend && trendJson.trend.length > 0) {
-            const real = trendJson.trend;
-
-            // Update trendData array
-            trendData.length = 0;
-            real.forEach(d => trendData.push(d));
-
-            // If chart already rendered, update it
-            if (trendChart) {
-                trendChart.data.labels           = trendData.map(d => d.day);
-                trendChart.data.datasets[0].data = trendData.map(d => d.hes);
-                trendChart.data.datasets[1].data = trendData.map(d => d.conv);
-                trendChart.update();
-            }
-        }
-
-        console.log('Chart data loaded successfully');
-    } catch(e) {
-        console.warn('Chart data fetch failed, using dummy data:', e);
-    }
-}
-
-// Load on startup, refresh every 15 seconds
-window.addEventListener('load', () => {
-  loadCloudData();
-  loadChartData();
-  setInterval(loadCloudData, 15000);
-  setInterval(loadChartData, 30000);
-});
-// ── DUMMY DATA ──
-const zoneData = {
-  A: { name:"Zone A", cat:"Snacks", sessions:0, hes:0, conv:0, hesRate:0, convRate:0, avgDwell:0, avgInt:0 },
-  B: { name:"Zone B", cat:"Beverages", sessions:0, hes:0, conv:0, hesRate:0, convRate:0, avgDwell:0, avgInt:0 },
-  C: { name:"Zone C", cat:"Chocolates", sessions:0, hes:0, conv:0, hesRate:0, convRate:0, avgDwell:0, avgInt:0 }
-};
-
-const hourlyData = [
-  { hour:"9AM",  A:2,  B:3,  C:1 },
-  { hour:"10AM", A:4,  B:5,  C:3 },
-  { hour:"11AM", A:5,  B:6,  C:4 },
-  { hour:"12PM", A:9,  B:11, C:7 },
-  { hour:"1PM",  A:11, B:13, C:9 },
-  { hour:"2PM",  A:6,  B:8,  C:5 },
-  { hour:"3PM",  A:5,  B:7,  C:4 },
-  { hour:"4PM",  A:7,  B:9,  C:5 },
-  { hour:"5PM",  A:10, B:12, C:8 },
-  { hour:"6PM",  A:12, B:14, C:10 },
-  { hour:"7PM",  A:9,  B:11, C:7 },
-  { hour:"8PM",  A:4,  B:5,  C:3 },
-];
-
-const trendData = [
-  { day:"Day 1", hes:38.2, conv:29.4, total:112 },
-  { day:"Day 2", hes:41.5, conv:27.1, total:128 },
-  { day:"Day 3", hes:35.8, conv:33.6, total:143 },
-  { day:"Day 4", hes:33.2, conv:37.8, total:138 },
-  { day:"Day 5", hes:30.9, conv:41.2, total:148 },
-];
-
-const behaviors = ["EXPLORATORY_BROWSING","FOCUSED_INTEREST","PROBABLE_HESITATION","SUCCESSFUL_CONVERSION"];
-const zones = ["Zone A","Zone B","Zone C"];
-
-function getBehaviorDist(z) {
-    const d = zoneData[z];
-    const explored  = d.sessions - d.hes - d.conv - 
-                     Math.max(0, d.sessions - d.hes - d.conv);
-    const focused   = Math.max(0, d.sessions - d.hes - d.conv);
-    return [
-        { name:'Conversion',  value: d.conv, color:'#10b981' },
-        { name:'Focused',     value: focused, color:'#3b82f6' },
-        { name:'Hesitation',  value: d.hes,  color:'#f59e0b' },
-        { name:'Exploratory', value: Math.max(0, d.sessions - d.conv - d.hes - focused), color:'#6366f1' }
-    ];
-}
-
-const mlInsights = [
-  { type:"WARNING", zone:"Zone B", title:"High Hesitation Detected", message:"Zone B (Beverages) has a 46% hesitation rate — highest across all zones. Consider reducing product SKU count or improving shelf signage.", metric:"46% Hesitation Rate" },
-  { type:"INFO",    zone:"Zone B", title:"Peak Hesitation Window",    message:"Hesitation events are concentrated between 12PM–1PM and 5PM–7PM, coinciding with peak footfall periods.", metric:"12PM–1PM, 5PM–7PM" },
-  { type:"SUCCESS", zone:"Zone C", title:"Best Performing Zone",      message:"Zone C (Chocolates) has the highest conversion rate at 57.9%. Shelf arrangement and product visibility appear optimal.", metric:"57.9% Conversion Rate" },
-  { type:"INFO",    zone:"All Zones", title:"Improving Trend",        message:"Overall hesitation rate has dropped from 41.5% (Day 2) to 30.9% (Day 5), suggesting shelf adjustments are having positive impact.", metric:"↓ 10.6% over 5 days" },
-];
-
-const chartDefaults = {
-  plugins: { legend: { labels: { color: '#9ca3af', font: { family: "'DM Sans', sans-serif", size: 11 } } } },
-  scales: {
-    x: { ticks: { color: '#6b7280', font: { family: "'JetBrains Mono', monospace", size: 10 } }, grid: { color: 'rgba(31,41,55,0.8)' } },
-    y: { ticks: { color: '#6b7280', font: { family: "'JetBrains Mono', monospace", size: 10 } }, grid: { color: 'rgba(31,41,55,0.8)' } }
-  }
-};
-
-// ── CLOCK ──
+// ── CLOCK ────────────────────────────────────────────────────
 function updateClock() {
-  const now = new Date();
-  document.getElementById('live-clock').textContent =
-    now.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+ const now = new Date();
+ document.getElementById('live-clock').textContent =
+  now.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
 }
 setInterval(updateClock, 1000); updateClock();
 
-// ── NAVIGATION ──
+// ── NAVIGATION ───────────────────────────────────────────────
 document.querySelectorAll('.nav-item').forEach(el => {
-  el.addEventListener('click', () => {
-    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-    el.classList.add('active');
-    const page = 'page-' + el.dataset.page;
-    document.getElementById(page).classList.add('active');
-    if (el.dataset.page === 'analytics') initAnalyticsPage();
-    if (el.dataset.page === 'billing') initBillingPage();
-    if (el.dataset.page === 'ml') renderInsights();
-  });
+ el.addEventListener('click', () => {
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  const page = 'page-' + el.dataset.page;
+  document.getElementById(page).classList.add('active');
+  if (el.dataset.page === 'analytics') initAnalyticsPage();
+  if (el.dataset.page === 'billing') initBillingPage();
+  if (el.dataset.page === 'ml') renderInsights();
+ });
 });
 
-// ── ACTIVITY FEED ──
-let feedItems = [
-  /*{ time:"18:42", zone:"Zone B", beh:"PROBABLE_HESITATION", dwell:31, int:5 },
-  { time:"18:39", zone:"Zone A", beh:"SUCCESSFUL_CONVERSION", dwell:22, int:3 },
-  { time:"18:35", zone:"Zone C", beh:"EXPLORATORY_BROWSING", dwell:8, int:1 },
-  { time:"18:31", zone:"Zone B", beh:"PROBABLE_HESITATION", dwell:44, int:7 },
-  { time:"18:28", zone:"Zone A", beh:"FOCUSED_INTEREST", dwell:18, int:3 },
-  { time:"18:22", zone:"Zone C", beh:"SUCCESSFUL_CONVERSION", dwell:15, int:2 },
-  { time:"18:17", zone:"Zone B", beh:"EXPLORATORY_BROWSING", dwell:6, int:1 },
-  { time:"18:11", zone:"Zone A", beh:"PROBABLE_HESITATION", dwell:28, int:4 },
-  { time:"18:06", zone:"Zone C", beh:"FOCUSED_INTEREST", dwell:19, int:3 },
-  { time:"18:01", zone:"Zone B", beh:"SUCCESSFUL_CONVERSION", dwell:20, int:3 },*/
+// ── DUMMY DATA ───────────────────────────────────────────────
+const zoneData = {
+ A: { name:"Zone A", cat:"Snacks",     sessions:0, hes:0, conv:0, hesRate:0, convRate:0, avgDwell:0, avgInt:0 },
+ B: { name:"Zone B", cat:"Beverages",  sessions:0, hes:0, conv:0, hesRate:0, convRate:0, avgDwell:0, avgInt:0 },
+ C: { name:"Zone C", cat:"Chocolates", sessions:0, hes:0, conv:0, hesRate:0, convRate:0, avgDwell:0, avgInt:0 }
+};
+const hourlyData = [
+ {hour:"9AM",A:2,B:3,C:1},{hour:"10AM",A:4,B:5,C:3},{hour:"11AM",A:5,B:6,C:4},
+ {hour:"12PM",A:9,B:11,C:7},{hour:"1PM",A:11,B:13,C:9},{hour:"2PM",A:6,B:8,C:5},
+ {hour:"3PM",A:5,B:7,C:4},{hour:"4PM",A:7,B:9,C:5},{hour:"5PM",A:10,B:12,C:8},
+ {hour:"6PM",A:12,B:14,C:10},{hour:"7PM",A:9,B:11,C:7},{hour:"8PM",A:4,B:5,C:3},
 ];
+const trendData = [
+ {day:"Day 1",hes:38.2,conv:29.4,total:112},{day:"Day 2",hes:41.5,conv:27.1,total:128},
+ {day:"Day 3",hes:35.8,conv:33.6,total:143},{day:"Day 4",hes:33.2,conv:37.8,total:138},
+ {day:"Day 5",hes:30.9,conv:41.2,total:148},
+];
+const behaviors = ["EXPLORATORY_BROWSING","FOCUSED_INTEREST","PROBABLE_HESITATION","SUCCESSFUL_CONVERSION"];
+const zones = ["Zone A","Zone B","Zone C"];
+let feedItems = [];
 
-function behaviorShort(b) {
-  const map = { EXPLORATORY_BROWSING:'Exploratory', FOCUSED_INTEREST:'Focused', PROBABLE_HESITATION:'Hesitation', SUCCESSFUL_CONVERSION:'Conversion' };
-  return map[b] || b;
+// ── CHART DEFAULTS ───────────────────────────────────────────
+const chartDefaults = {
+ plugins: { legend: { labels: { color:'#9ca3af', font:{family:"'DM Sans', sans-serif",size:11} } } },
+ scales: {
+  x: { ticks:{color:'#6b7280',font:{family:"'JetBrains Mono', monospace",size:10}}, grid:{color:'rgba(31,41,55,0.8)'} },
+  y: { ticks:{color:'#6b7280',font:{family:"'JetBrains Mono', monospace",size:10}}, grid:{color:'rgba(31,41,55,0.8)'} }
+ }
+};
+
+// ── CLOUD API ────────────────────────────────────────────────
+async function loadCloudData() {
+ try {
+  const summaryRes = await fetch(`${API_BASE}/summary`);
+  const summaryData = await summaryRes.json();
+  if (summaryData.summary) {
+   const summary = summaryData.summary;
+   const totalSessions = summary.reduce((a,b) => a + b.totalSessions, 0);
+   const totalHesitations = summary.reduce((a,b) => a + b.hesitationCount, 0);
+   const totalConversions = summary.reduce((a,b) => a + b.conversionCount, 0);
+   const overallConvRate = totalSessions > 0 ? (totalConversions / totalSessions * 100).toFixed(1) : 0;
+   const sessEl = document.getElementById('stat-sessions'); if (sessEl) sessEl.textContent = totalSessions;
+   const hesEl = document.getElementById('stat-hesitations'); if (hesEl) hesEl.textContent = totalHesitations;
+   const convRateEl = document.getElementById('stat-convrate'); if (convRateEl) convRateEl.textContent = overallConvRate + '%';
+   const worst = summary.reduce((a,b) => a.hesitationRate > b.hesitationRate ? a : b);
+   const worstEl = document.getElementById('stat-worstzone'); if (worstEl) worstEl.textContent = 'Zone ' + worst.zoneId.replace('ZONE_', '');
+   summary.forEach(zone => {
+    const z = zone.zoneId.replace('ZONE_', '');
+    zoneData[z].sessions = zone.totalSessions; zoneData[z].hes = zone.hesitationCount;
+    zoneData[z].conv = zone.conversionCount; zoneData[z].hesRate = zone.hesitationRate;
+    zoneData[z].convRate = zone.conversionRate; zoneData[z].avgDwell = zone.avgDwellTime;
+    const sessZ = document.getElementById(`zsess-${z}`); if (sessZ) sessZ.textContent = zone.totalSessions;
+    const hesZ = document.getElementById(`zhes-${z}`); if (hesZ) hesZ.textContent = zone.hesitationCount;
+    const convZ = document.getElementById(`zconv-${z}`); if (convZ) convZ.textContent = zone.conversionCount;
+    const hrateZ = document.getElementById(`zhrate-${z}`); if (hrateZ) hrateZ.textContent = zone.hesitationRate + '%';
+    const hbarZ = document.getElementById(`zhbar-${z}`);
+    if (hbarZ) { hbarZ.style.width = zone.hesitationRate + '%'; hbarZ.style.background = zone.hesitationRate > 40 ? 'var(--red)' : zone.hesitationRate > 25 ? 'var(--amber)' : 'var(--green)'; }
+   });
+   renderHeatmap(summary); renderComparisonTable(summary); renderRiskCards(summary);
+  }
+  const feedRes = await fetch(`${API_BASE}/feed`);
+  const feedData = await feedRes.json();
+  if (feedData.feed && feedData.feed.length > 0) {
+   feedItems = feedData.feed.map(ev => ({time:ev.time, zone:ev.zone.replace('ZONE_','Zone '), beh:ev.behavior, dwell:ev.dwellTime, int:ev.interactions}));
+   renderFeed(); updateZoneCards(feedItems);
+  }
+ } catch(e) { console.warn('Cloud fetch failed, using dummy data:', e); }
 }
+async function loadChartData() {
+ try {
+  const hourlyRes = await fetch(`${API_BASE}/hourly`);
+  const hourlyJson = await hourlyRes.json();
+  if (hourlyJson.hourly && hourlyJson.hourly.length > 0) {
+   hourlyData.length = 0; hourlyJson.hourly.forEach(d => hourlyData.push(d));
+   if (hourlyChart) { hourlyChart.data.labels = hourlyData.map(d=>d.hour); hourlyChart.data.datasets[0].data = hourlyData.map(d=>d.A); hourlyChart.data.datasets[1].data = hourlyData.map(d=>d.B); hourlyChart.data.datasets[2].data = hourlyData.map(d=>d.C); hourlyChart.update(); }
+  }
+  const trendRes = await fetch(`${API_BASE}/trend`);
+  const trendJson = await trendRes.json();
+  if (trendJson.trend && trendJson.trend.length > 0) {
+   trendData.length = 0; trendJson.trend.forEach(d => trendData.push(d));
+   if (trendChart) { trendChart.data.labels = trendData.map(d=>d.day); trendChart.data.datasets[0].data = trendData.map(d=>d.hes); trendChart.data.datasets[1].data = trendData.map(d=>d.conv); trendChart.update(); }
+  }
+ } catch(e) { console.warn('Chart data fetch failed:', e); }
+}
+window.addEventListener('load', () => {
+ loadCloudData(); loadChartData();
+ setInterval(loadCloudData, 15000); setInterval(loadChartData, 30000);
+});
 
+// ── ACTIVITY FEED ────────────────────────────────────────────
+function behaviorShort(b) {
+ const map = {EXPLORATORY_BROWSING:'Exploratory',FOCUSED_INTEREST:'Focused',PROBABLE_HESITATION:'Hesitation',SUCCESSFUL_CONVERSION:'Conversion',PRESENCE_ONLY:'Presence',UNDETERMINED:'Unknown'};
+ return map[b] || b;
+}
 function renderFeed() {
-  const tbody = document.getElementById('feed-body');
-  tbody.innerHTML = feedItems.slice(0,15).map((item, i) => `
-    <tr class="${i===0?'new-row':''}">
-      <td class="time-mono">${item.time}</td>
-      <td class="zone-tag">${item.zone}</td>
-      <td><span class="beh-badge beh-${item.beh}">${behaviorShort(item.beh)}</span></td>
-      <td><span style="font-family:'JetBrains Mono',monospace">${item.dwell}s</span></td>
-      <td><span style="font-family:'JetBrains Mono',monospace">${item.int}</span></td>
-    </tr>`).join('');
+ const tbody = document.getElementById('feed-body');
+ tbody.innerHTML = feedItems.slice(0,15).map((item, i) => `
+  <tr class="${i===0?'new-row':''}">
+   <td class="time-mono">${item.time}</td>
+   <td class="zone-tag">${item.zone}</td>
+   <td><span class="beh-badge beh-${item.beh}">${behaviorShort(item.beh)}</span></td>
+   <td><span style="font-family:'JetBrains Mono',monospace">${item.dwell}s</span></td>
+   <td><span style="font-family:'JetBrains Mono',monospace">${item.int}</span></td>
+  </tr>`).join('');
 }
 renderFeed();
 
-function addFeedEvent() {
-  const now = new Date();
-  const hh = String(now.getHours()).padStart(2,'0');
-  const mm = String(now.getMinutes()).padStart(2,'0');
-  const zone = zones[Math.floor(Math.random()*3)];
-  const beh = behaviors[Math.floor(Math.random()*4)];
-  const dwell = Math.floor(Math.random()*35)+5;
-  const ints = Math.floor(Math.random()*6)+1;
-  feedItems.unshift({ time:`${hh}:${mm}`, zone, beh, dwell, int:ints });
-  if (feedItems.length > 20) feedItems.pop();
-  renderFeed();
-}
-//setInterval(addFeedEvent, 17000);
-
-// ── LIVE ZONE SIMULATION ──
-// Tracks countdown timers per zone
-const zoneTimers = { A: null, B: null, C: null };
-const ACTIVE_WINDOW_SECONDS = 60; // consider zone active if last event < 60s ago
-
+// ── ZONE TIMERS ──────────────────────────────────────────────
+const zoneTimers = {A:null,B:null,C:null};
+const ACTIVE_WINDOW_SECONDS = 60;
 function updateZoneCards(feed) {
-    // Get most recent event per zone from feed
-    const latestByZone = {};
-    feed.forEach(item => {
-        const z = item.zone.replace('Zone ', '');
-        if (!latestByZone[z]) latestByZone[z] = item;
-    });
-
-    ['A', 'B', 'C'].forEach(z => {
-        const dot      = document.getElementById(`zdot-${z}`);
-        const statusEl = document.getElementById(`zstatus-${z}`);
-        const dwellEl  = document.getElementById(`zdwell-${z}`);
-        const behEl    = document.getElementById(`zbeh-${z}`);
-        const latest   = latestByZone[z];
-
-        // Clear any existing timer for this zone
-        if (zoneTimers[z]) {
-            clearInterval(zoneTimers[z]);
-            zoneTimers[z] = null;
-        }
-
-        if (!latest) {
-            // No data at all for this zone
-            if (dot)      dot.className     = 'status-dot idle';
-            if (statusEl) { statusEl.textContent = 'IDLE'; statusEl.style.color = 'var(--text3)'; }
-            if (dwellEl)  { dwellEl.textContent  = '⏱ No active session'; dwellEl.style.color = 'var(--text3)'; }
-            return;
-        }
-
-        // Check how long ago this event was
-        // feed items have time like "14:32" — compare to current time
-        const now        = new Date();
-        const [hh, mm]   = latest.time.split(':').map(Number);
-        const eventTime  = new Date();
-        eventTime.setHours(hh, mm, 0, 0);
-        const secondsAgo = Math.floor((now - eventTime) / 1000);
-
-        if (secondsAgo <= ACTIVE_WINDOW_SECONDS && secondsAgo >= 0) {
-            // Zone is ACTIVE — show real dwell time and behavior
-            if (dot)      dot.className     = 'status-dot active';
-            if (statusEl) { statusEl.textContent = 'ACTIVE'; statusEl.style.color = 'var(--green)'; }
-            if (behEl)    { 
-                behEl.className   = `beh-badge beh-${latest.beh}`;
-                behEl.textContent = latest.beh.replace(/_/g, ' ');
-            }
-
-            // Count up timer from real dwell time
-            let elapsed = secondsAgo;
-            if (dwellEl) {
-                dwellEl.style.color  = 'var(--cyan)';
-                dwellEl.textContent  = `⏱ Dwell: ${elapsed}s`;
-            }
-
-            // Keep counting up every second
-            zoneTimers[z] = setInterval(() => {
-                elapsed++;
-                if (dwellEl) dwellEl.textContent = `⏱ Dwell: ${elapsed}s`;
-
-                // Auto flip to idle after window expires
-                if (elapsed > ACTIVE_WINDOW_SECONDS) {
-                    clearInterval(zoneTimers[z]);
-                    zoneTimers[z] = null;
-                    if (dot)      dot.className     = 'status-dot idle';
-                    if (statusEl) { statusEl.textContent = 'IDLE'; statusEl.style.color = 'var(--text3)'; }
-                    if (dwellEl)  { dwellEl.textContent  = '⏱ No active session'; dwellEl.style.color = 'var(--text3)'; }
-                }
-            }, 1000);
-
-        } else {
-            // Zone is IDLE — show last known behavior
-            if (dot)      dot.className     = 'status-dot idle';
-            if (statusEl) { statusEl.textContent = 'IDLE'; statusEl.style.color = 'var(--text3)'; }
-            if (dwellEl)  { dwellEl.textContent  = '⏱ No active session'; dwellEl.style.color = 'var(--text3)'; }
-            if (behEl)    {
-                behEl.className   = `beh-badge beh-${latest.beh}`;
-                behEl.textContent = latest.beh.replace(/_/g, ' ');
-            }
-        }
-    });
+ const latestByZone = {};
+ feed.forEach(item => { const z = item.zone.replace('Zone ',''); if (!latestByZone[z]) latestByZone[z] = item; });
+ ['A','B','C'].forEach(z => {
+  const dot = document.getElementById(`zdot-${z}`), statusEl = document.getElementById(`zstatus-${z}`);
+  const dwellEl = document.getElementById(`zdwell-${z}`), behEl = document.getElementById(`zbeh-${z}`);
+  const latest = latestByZone[z];
+  if (zoneTimers[z]) { clearInterval(zoneTimers[z]); zoneTimers[z] = null; }
+  if (!latest) { if(dot) dot.className='status-dot idle'; if(statusEl){statusEl.textContent='IDLE';statusEl.style.color='var(--text3)';} if(dwellEl){dwellEl.textContent='⏱ No active session';dwellEl.style.color='var(--text3)';} return; }
+  const now = new Date(), [hh,mm] = latest.time.split(':').map(Number);
+  const eventTime = new Date(); eventTime.setHours(hh,mm,0,0);
+  const secondsAgo = Math.floor((now - eventTime) / 1000);
+  if (secondsAgo <= ACTIVE_WINDOW_SECONDS && secondsAgo >= 0) {
+   if(dot) dot.className='status-dot active'; if(statusEl){statusEl.textContent='ACTIVE';statusEl.style.color='var(--green)';}
+   if(behEl){behEl.className=`beh-badge beh-${latest.beh}`;behEl.textContent=latest.beh.replace(/_/g,' ');}
+   let elapsed = secondsAgo;
+   if(dwellEl){dwellEl.style.color='var(--cyan)';dwellEl.textContent=`⏱ Dwell: ${elapsed}s`;}
+   zoneTimers[z] = setInterval(()=>{
+    elapsed++;
+    if(dwellEl) dwellEl.textContent=`⏱ Dwell: ${elapsed}s`;
+    if(elapsed > ACTIVE_WINDOW_SECONDS){clearInterval(zoneTimers[z]);zoneTimers[z]=null;if(dot)dot.className='status-dot idle';if(statusEl){statusEl.textContent='IDLE';statusEl.style.color='var(--text3)';}if(dwellEl){dwellEl.textContent='⏱ No active session';dwellEl.style.color='var(--text3)';}}
+   },1000);
+  } else {
+   if(dot) dot.className='status-dot idle'; if(statusEl){statusEl.textContent='IDLE';statusEl.style.color='var(--text3)';} if(dwellEl){dwellEl.textContent='⏱ No active session';dwellEl.style.color='var(--text3)';}
+   if(behEl){behEl.className=`beh-badge beh-${latest.beh}`;behEl.textContent=latest.beh.replace(/_/g,' ');}
+  }
+ });
 }
-//setInterval(triggerRandomZone, 11000);
 
-// ── ANALYTICS PAGE ──
+// ── ANALYTICS PAGE ───────────────────────────────────────────
 let hourlyChart=null, trendChart=null, zoneHourlyChart=null, zonePieChart=null;
-
 function initAnalyticsPage() {
-  setTimeout(()=>{
-    if(!hourlyChart) {
-      const ctx = document.getElementById('hourly-chart').getContext('2d');
-      hourlyChart = new Chart(ctx, {
-        type:'bar',
-        data:{
-          labels: hourlyData.map(d=>d.hour),
-          datasets:[
-            { label:'Zone A', data:hourlyData.map(d=>d.A), backgroundColor:'rgba(0,212,255,0.7)', borderRadius:3 },
-            { label:'Zone B', data:hourlyData.map(d=>d.B), backgroundColor:'rgba(245,158,11,0.7)', borderRadius:3 },
-            { label:'Zone C', data:hourlyData.map(d=>d.C), backgroundColor:'rgba(16,185,129,0.7)', borderRadius:3 },
-          ]
-        },
-        options:{ responsive:true, maintainAspectRatio:false, ...chartDefaults, plugins:{...chartDefaults.plugins, tooltip:{backgroundColor:'#1e2a3a',titleColor:'#f9fafb',bodyColor:'#9ca3af'}} }
-      });
-    }
-    if(!trendChart) {
-      const ctx2 = document.getElementById('trend-chart').getContext('2d');
-      trendChart = new Chart(ctx2, {
-        type:'line',
-        data:{
-          labels: trendData.map(d=>d.day),
-          datasets:[
-            { label:'Hesitation Rate %', data:trendData.map(d=>d.hes), borderColor:'#f59e0b', backgroundColor:'rgba(245,158,11,0.08)', tension:0.4, pointBackgroundColor:'#f59e0b', pointRadius:4 },
-            { label:'Conversion Rate %', data:trendData.map(d=>d.conv), borderColor:'#10b981', backgroundColor:'rgba(16,185,129,0.08)', tension:0.4, pointBackgroundColor:'#10b981', pointRadius:4 },
-          ]
-        },
-        options:{ responsive:true, maintainAspectRatio:false, ...chartDefaults, plugins:{...chartDefaults.plugins, tooltip:{backgroundColor:'#1e2a3a',titleColor:'#f9fafb',bodyColor:'#9ca3af'}} }
-      });
-    }
-  },50);
+ setTimeout(()=>{
+  if(!hourlyChart) {
+   const ctx = document.getElementById('hourly-chart').getContext('2d');
+   hourlyChart = new Chart(ctx,{type:'bar',data:{labels:hourlyData.map(d=>d.hour),datasets:[{label:'Zone A',data:hourlyData.map(d=>d.A),backgroundColor:'rgba(0,212,255,0.7)',borderRadius:3},{label:'Zone B',data:hourlyData.map(d=>d.B),backgroundColor:'rgba(245,158,11,0.7)',borderRadius:3},{label:'Zone C',data:hourlyData.map(d=>d.C),backgroundColor:'rgba(16,185,129,0.7)',borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,...chartDefaults,plugins:{...chartDefaults.plugins,tooltip:{backgroundColor:'#1e2a3a',titleColor:'#f9fafb',bodyColor:'#9ca3af'}}}});
+  }
+  if(!trendChart) {
+   const ctx2 = document.getElementById('trend-chart').getContext('2d');
+   trendChart = new Chart(ctx2,{type:'line',data:{labels:trendData.map(d=>d.day),datasets:[{label:'Hesitation Rate %',data:trendData.map(d=>d.hes),borderColor:'#f59e0b',backgroundColor:'rgba(245,158,11,0.08)',tension:0.4,pointBackgroundColor:'#f59e0b',pointRadius:4},{label:'Conversion Rate %',data:trendData.map(d=>d.conv),borderColor:'#10b981',backgroundColor:'rgba(16,185,129,0.08)',tension:0.4,pointBackgroundColor:'#10b981',pointRadius:4}]},options:{responsive:true,maintainAspectRatio:false,...chartDefaults,plugins:{...chartDefaults.plugins,tooltip:{backgroundColor:'#1e2a3a',titleColor:'#f9fafb',bodyColor:'#9ca3af'}}}});
+  }
+ },50);
 }
-
-// Zone tabs
 let currentZoneTab = 'all';
 document.querySelectorAll('.ztab').forEach(tab => {
-  tab.addEventListener('click', () => {
-    document.querySelectorAll('.ztab').forEach(t=>t.classList.remove('active'));
-    tab.classList.add('active');
-    currentZoneTab = tab.dataset.zone;
-    if (currentZoneTab === 'all') {
-      document.getElementById('zone-all').style.display = '';
-      document.getElementById('zone-individual').style.display = 'none';
-      if(!hourlyChart) initAnalyticsPage();
-    } else {
-      document.getElementById('zone-all').style.display = 'none';
-      document.getElementById('zone-individual').style.display = '';
-      renderZoneDetail(currentZoneTab);
-    }
-  });
+ tab.addEventListener('click', () => {
+  document.querySelectorAll('.ztab').forEach(t=>t.classList.remove('active'));
+  tab.classList.add('active'); currentZoneTab = tab.dataset.zone;
+  if (currentZoneTab === 'all') { document.getElementById('zone-all').style.display=''; document.getElementById('zone-individual').style.display='none'; if(!hourlyChart) initAnalyticsPage(); }
+  else { document.getElementById('zone-all').style.display='none'; document.getElementById('zone-individual').style.display=''; renderZoneDetail(currentZoneTab); }
+ });
 });
-
+function getBehaviorDist(z) {
+ const d = zoneData[z];
+ const focused = Math.max(0, d.sessions - d.hes - d.conv);
+ return [{name:'Conversion',value:d.conv,color:'#10b981'},{name:'Focused',value:focused,color:'#3b82f6'},{name:'Hesitation',value:d.hes,color:'#f59e0b'},{name:'Exploratory',value:Math.max(0,d.sessions-d.conv-d.hes-focused),color:'#6366f1'}];
+}
 function renderZoneDetail(z) {
-  const d = zoneData[z];
-  const mc = document.getElementById('zone-metric-cards');
-  mc.innerHTML = `
-    <div class="stat-card"><div class="stat-top"><div class="stat-icon" style="background:rgba(0,212,255,0.1)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00d4ff" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg></div></div><div class="stat-val">${d.sessions}</div><div class="stat-label">Sessions</div></div>
-    <div class="stat-card"><div class="stat-top"><div class="stat-icon" style="background:rgba(245,158,11,0.1)"></div></div><div class="stat-val" style="color:var(--amber)">${d.hesRate}%</div><div class="stat-label">Hesitation Rate</div></div>
-    <div class="stat-card"><div class="stat-top"><div class="stat-icon" style="background:rgba(16,185,129,0.1)"></div></div><div class="stat-val" style="color:var(--green)">${d.convRate}%</div><div class="stat-label">Conversion Rate</div></div>
-    <div class="stat-card"><div class="stat-top"><div class="stat-icon" style="background:rgba(99,102,241,0.1)"></div></div><div class="stat-val" style="color:var(--indigo)">${d.avgDwell}s</div><div class="stat-label">Avg Dwell Time</div></div>
-  `;
-  document.getElementById('zone-hourly-title').textContent = `Hourly Activity — ${d.name}`;
-  document.getElementById('zone-pie-title').textContent = `Behavior Distribution — ${d.name}`;
-  document.getElementById('zone-session-title').textContent = `Recent Sessions — ${d.name}`;
-
-  setTimeout(()=>{
-    if(zoneHourlyChart){zoneHourlyChart.destroy();zoneHourlyChart=null;}
-    const ctx = document.getElementById('zone-hourly-chart').getContext('2d');
-    const colorMap = {A:'rgba(0,212,255,0.7)',B:'rgba(245,158,11,0.7)',C:'rgba(16,185,129,0.7)'};
-    zoneHourlyChart = new Chart(ctx,{
-      type:'bar',
-      data:{ labels:hourlyData.map(d=>d.hour), datasets:[{label:d.name,data:hourlyData.map(r=>r[z]),backgroundColor:colorMap[z],borderRadius:3}] },
-      options:{ responsive:true, maintainAspectRatio:false, ...chartDefaults }
-    });
-    if(zonePieChart){zonePieChart.destroy();zonePieChart=null;}
-    const ctx2 = document.getElementById('zone-pie-chart').getContext('2d');
-    const dist = getBehaviorDist(z);
-    zonePieChart = new Chart(ctx2,{
-      type:'doughnut',
-      data:{ labels:dist.map(d=>d.name), datasets:[{data:dist.map(d=>d.value),backgroundColor:dist.map(d=>d.color),borderWidth:2,borderColor:'#111827'}] },
-      options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{ position:'right', labels:{ color:'#9ca3af', font:{family:"'DM Sans', sans-serif",size:11}, padding:12 } }, tooltip:{backgroundColor:'#1e2a3a',titleColor:'#f9fafb',bodyColor:'#9ca3af'} } }
-    });
-  },50);
-
-  // Session table
-  loadZoneSessions(z);
+ const d = zoneData[z];
+ document.getElementById('zone-metric-cards').innerHTML = `
+  <div class="stat-card"><div class="stat-top"><div class="stat-icon" style="background:rgba(0,212,255,0.1)"></div></div><div class="stat-val">${d.sessions}</div><div class="stat-label">Sessions</div></div>
+  <div class="stat-card"><div class="stat-top"><div class="stat-icon" style="background:rgba(245,158,11,0.1)"></div></div><div class="stat-val" style="color:var(--amber)">${d.hesRate}%</div><div class="stat-label">Hesitation Rate</div></div>
+  <div class="stat-card"><div class="stat-top"><div class="stat-icon" style="background:rgba(16,185,129,0.1)"></div></div><div class="stat-val" style="color:var(--green)">${d.convRate}%</div><div class="stat-label">Conversion Rate</div></div>
+  <div class="stat-card"><div class="stat-top"><div class="stat-icon" style="background:rgba(99,102,241,0.1)"></div></div><div class="stat-val" style="color:var(--indigo)">${d.avgDwell}s</div><div class="stat-label">Avg Dwell Time</div></div>`;
+ document.getElementById('zone-hourly-title').textContent = `Hourly Activity — ${d.name}`;
+ document.getElementById('zone-pie-title').textContent = `Behavior Distribution — ${d.name}`;
+ document.getElementById('zone-session-title').textContent = `Recent Sessions — ${d.name}`;
+ setTimeout(()=>{
+  if(zoneHourlyChart){zoneHourlyChart.destroy();zoneHourlyChart=null;}
+  const colorMap = {A:'rgba(0,212,255,0.7)',B:'rgba(245,158,11,0.7)',C:'rgba(16,185,129,0.7)'};
+  zoneHourlyChart = new Chart(document.getElementById('zone-hourly-chart').getContext('2d'),{type:'bar',data:{labels:hourlyData.map(d=>d.hour),datasets:[{label:d.name,data:hourlyData.map(r=>r[z]),backgroundColor:colorMap[z],borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,...chartDefaults}});
+  if(zonePieChart){zonePieChart.destroy();zonePieChart=null;}
+  const dist = getBehaviorDist(z);
+  zonePieChart = new Chart(document.getElementById('zone-pie-chart').getContext('2d'),{type:'doughnut',data:{labels:dist.map(d=>d.name),datasets:[{data:dist.map(d=>d.value),backgroundColor:dist.map(d=>d.color),borderWidth:2,borderColor:'#111827'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{color:'#9ca3af',font:{family:"'DM Sans', sans-serif",size:11},padding:12}},tooltip:{backgroundColor:'#1e2a3a',titleColor:'#f9fafb',bodyColor:'#9ca3af'}}}});
+ },50);
+ loadZoneSessions(z);
 }
-
 function renderHeatmap(summary) {
-    const colorFor = r => r > 40 
-        ? `rgba(239,68,68,0.45)` 
-        : r > 25 
-        ? `rgba(245,158,11,0.35)` 
-        : `rgba(16,185,129,0.30)`;
-    
-    const riskFor = r => r > 40 ? 'HIGH' : r > 25 ? 'MEDIUM' : 'LOW';
-    const riskColorFor = r => r > 40 ? 'var(--red)' : r > 25 ? 'var(--amber)' : 'var(--green)';
-
-    const container = document.querySelector('.shelf-container');
-    if (!container) return;
-
-    container.innerHTML = summary.map(zone => {
-        const z = zone.zoneId.replace('ZONE_', '');
-        const cat = zoneData[z].cat;
-        const r = zone.hesitationRate;
-        return `
-        <div class="shelf-zone" style="background:${colorFor(r)}">
-            <div class="shelf-tooltip">
-                <div class="tt-row"><span>Sessions</span><span class="tt-val">${zone.totalSessions}</span></div>
-                <div class="tt-row"><span>Hesitations</span><span class="tt-val">${zone.hesitationCount}</span></div>
-                <div class="tt-row"><span>Conversion</span><span class="tt-val">${zone.conversionRate}%</span></div>
-                <div class="tt-row"><span>Avg Dwell</span><span class="tt-val">${zone.avgDwellTime}s</span></div>
-            </div>
-            <div class="sz-label">Zone ${z}</div>
-            <div class="sz-cat">${cat}</div>
-            <div class="sz-rate">${r}%</div>
-            <div class="sz-sub">Hesitation Rate</div>
-        </div>`;
-    }).join('');
+ const colorFor = r => r>40?`rgba(239,68,68,0.45)`:r>25?`rgba(245,158,11,0.35)`:`rgba(16,185,129,0.30)`;
+ const container = document.querySelector('.shelf-container'); if(!container) return;
+ container.innerHTML = summary.map(zone => {
+  const z = zone.zoneId.replace('ZONE_',''), cat = zoneData[z].cat, r = zone.hesitationRate;
+  return `<div class="shelf-zone" style="background:${colorFor(r)}"><div class="shelf-tooltip"><div class="tt-row"><span>Sessions</span><span class="tt-val">${zone.totalSessions}</span></div><div class="tt-row"><span>Hesitations</span><span class="tt-val">${zone.hesitationCount}</span></div><div class="tt-row"><span>Conversion</span><span class="tt-val">${zone.conversionRate}%</span></div><div class="tt-row"><span>Avg Dwell</span><span class="tt-val">${zone.avgDwellTime}s</span></div></div><div class="sz-label">Zone ${z}</div><div class="sz-cat">${cat}</div><div class="sz-rate">${r}%</div><div class="sz-sub">Hesitation Rate</div></div>`;
+ }).join('');
 }
-
 function renderComparisonTable(summary) {
-  const tbody = document.getElementById('zone-comparison-body');
-  if (!tbody) return;
-
-  tbody.innerHTML = summary.map(zone => {
-    const z = zone.zoneId.replace('ZONE_', '');
-    const cat = zoneData[z].cat;
-    const hrClass = zone.hesitationRate > 40 ? 'rate-high' 
-                  : zone.hesitationRate > 25 ? 'rate-mid' : 'rate-ok';
-    const crClass = zone.conversionRate > 40 ? 'rate-ok' : 'rate-mid';
-
-    return `<tr>
-      <td><span style="color:var(--cyan);font-family:'JetBrains Mono',monospace">Zone ${z} — ${cat}</span></td>
-      <td>${zone.totalSessions}</td>
-      <td>${zone.hesitationCount}</td>
-      <td>${zone.conversionCount}</td>
-      <td><span class="rate-val ${hrClass}">${zone.hesitationRate}%</span></td>
-      <td><span class="rate-val ${crClass}">${zone.conversionRate}%</span></td>
-      <td><span style="font-family:'JetBrains Mono',monospace">${zone.avgDwellTime}s</span></td>
-    </tr>`;
-  }).join('');
+ const tbody = document.getElementById('zone-comparison-body'); if(!tbody) return;
+ tbody.innerHTML = summary.map(zone => {
+  const z = zone.zoneId.replace('ZONE_',''), cat = zoneData[z].cat;
+  const hrClass = zone.hesitationRate>40?'rate-high':zone.hesitationRate>25?'rate-mid':'rate-ok';
+  const crClass = zone.conversionRate>40?'rate-ok':'rate-mid';
+  return `<tr><td><span style="color:var(--cyan);font-family:'JetBrains Mono',monospace">Zone ${z} — ${cat}</span></td><td>${zone.totalSessions}</td><td>${zone.hesitationCount}</td><td>${zone.conversionCount}</td><td><span class="rate-val ${hrClass}">${zone.hesitationRate}%</span></td><td><span class="rate-val ${crClass}">${zone.conversionRate}%</span></td><td><span style="font-family:'JetBrains Mono',monospace">${zone.avgDwellTime}s</span></td></tr>`;
+ }).join('');
 }
-
 function renderRiskCards(summary) {
-    const container = document.getElementById('risk-cards-container');
-    if (!container) return;
-
-    const riskFor = r => r > 40 ? 'HIGH' : r > 25 ? 'MEDIUM' : 'LOW';
-    const colorFor = r => r > 40 ? 'var(--red)' 
-                        : r > 25 ? 'var(--amber)' 
-                        : 'var(--green)';
-    const concernFor = r => r > 40
-        ? 'High interaction, low conversion suggests decision paralysis. Too many SKUs overwhelming customers.'
-        : r > 25
-        ? 'Moderate hesitation with acceptable conversion. Occasional decision friction observed.'
-        : 'Excellent conversion performance. Shelf arrangement and product visibility are optimal.';
-    const actionFor = r => r > 40
-        ? '→ Reduce SKU count, improve shelf signage and product labels'
-        : r > 25
-        ? '→ Review product placement; consider reducing adjacent SKUs'
-        : '→ Maintain current layout; use as reference for other zones';
-
-    container.innerHTML = summary.map(zone => {
-        const z = zone.zoneId.replace('ZONE_', '');
-        const cat = zoneData[z].cat;
-        const r = zone.hesitationRate;
-        const risk = riskFor(r);
-        return `
-        <div class="risk-card">
-            <div class="risk-badge risk-${risk}">${risk} RISK</div>
-            <div class="risk-title">Zone ${z} — ${cat}</div>
-            <div style="font-family:'JetBrains Mono',monospace;font-size:20px;
-                font-weight:700;color:${colorFor(r)};margin-bottom:8px">
-                ${r}%
-            </div>
-            <div class="risk-concern">${concernFor(r)}</div>
-            <div class="risk-action">${actionFor(r)}</div>
-        </div>`;
-    }).join('');
+ const container = document.getElementById('risk-cards-container'); if(!container) return;
+ const riskFor = r => r>40?'HIGH':r>25?'MEDIUM':'LOW';
+ const colorFor = r => r>40?'var(--red)':r>25?'var(--amber)':'var(--green)';
+ const concernFor = r => r>40?'High interaction, low conversion suggests decision paralysis. Too many SKUs overwhelming customers.':r>25?'Moderate hesitation with acceptable conversion. Occasional decision friction observed.':'Excellent conversion performance. Shelf arrangement and product visibility are optimal.';
+ const actionFor = r => r>40?'→ Reduce SKU count, improve shelf signage and product labels':r>25?'→ Review product placement; consider reducing adjacent SKUs':'→ Maintain current layout; use as reference for other zones';
+ container.innerHTML = summary.map(zone => {
+  const z = zone.zoneId.replace('ZONE_',''), cat = zoneData[z].cat, r = zone.hesitationRate, risk = riskFor(r);
+  return `<div class="risk-card"><div class="risk-badge risk-${risk}">${risk} RISK</div><div class="risk-title">Zone ${z} — ${cat}</div><div style="font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:700;color:${colorFor(r)};margin-bottom:8px">${r}%</div><div class="risk-concern">${concernFor(r)}</div><div class="risk-action">${actionFor(r)}</div></div>`;
+ }).join('');
 }
-
 async function loadZoneSessions(z) {
-    const tbody = document.getElementById('zone-session-body');
-    if (!tbody) return;
-
-    // Show loading state
-    tbody.innerHTML = `<tr><td colspan="5" 
-        style="text-align:center;color:var(--text3);font-family:'JetBrains Mono',monospace;padding:20px">
-        Loading sessions...
-    </td></tr>`;
-
-    try {
-        const res  = await fetch(`${API_BASE}/sessions?zoneId=ZONE_${z}`);
-        const data = await res.json();
-        const sessions = data.sessions || [];
-
-        if (sessions.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="5" 
-                style="text-align:center;color:var(--text3);font-family:'JetBrains Mono',monospace;padding:20px">
-                No sessions recorded yet for Zone ${z}
-            </td></tr>`;
-            return;
-        }
-
-        tbody.innerHTML = sessions.slice(0, 10).map(item => {
-            const ts = item.timestamp || '';
-            let timeStr = '';
-            try {
-                timeStr = new Date(ts).toLocaleTimeString('en-GB', {
-                    hour:   '2-digit',
-                    minute: '2-digit'
-                });
-            } catch { timeStr = ts.slice(11, 16); }
-
-            const dwell   = (parseFloat(item.dwellTime || 0) / 1000).toFixed(1);
-            const ints    = item.interactionCount || 0;
-            const density = item.interactionDensity || '0';
-            const beh     = item.cloudTag || 'UNDETERMINED';
-
-            return `<tr>
-                <td class="time-mono">${timeStr}</td>
-                <td style="font-family:'JetBrains Mono',monospace">${dwell}s</td>
-                <td style="font-family:'JetBrains Mono',monospace">${ints}</td>
-                <td style="font-family:'JetBrains Mono',monospace">${parseFloat(density).toFixed(1)}%</td>
-                <td><span class="beh-badge beh-${beh}">${behaviorShort(beh)}</span></td>
-            </tr>`;
-        }).join('');
-
-    } catch(e) {
-        tbody.innerHTML = `<tr><td colspan="5" 
-            style="text-align:center;color:var(--red);font-family:'JetBrains Mono',monospace;padding:20px">
-            Failed to load sessions
-        </td></tr>`;
-        console.warn('Session fetch failed:', e);
-    }
+ const tbody = document.getElementById('zone-session-body'); if(!tbody) return;
+ tbody.innerHTML = `<tr><td colspan="5" class="loading-placeholder">Loading sessions...</td></tr>`;
+ try {
+  const res = await fetch(`${API_BASE}/sessions?zoneId=ZONE_${z}`);
+  const data = await res.json();
+  const sessions = data.sessions || [];
+  if (sessions.length === 0) { tbody.innerHTML = `<tr><td colspan="5" class="loading-placeholder">No sessions recorded yet for Zone ${z}</td></tr>`; return; }
+  tbody.innerHTML = sessions.slice(0,10).map(item => {
+   let timeStr = ''; try { timeStr = new Date(item.timestamp||'').toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}); } catch { timeStr = (item.timestamp||'').slice(11,16); }
+   const dwell = (parseFloat(item.dwellTime||0)/1000).toFixed(1), ints = item.interactionCount||0, density = item.interactionDensity||'0', beh = item.cloudTag||'UNDETERMINED';
+   return `<tr><td class="time-mono">${timeStr}</td><td style="font-family:'JetBrains Mono',monospace">${dwell}s</td><td style="font-family:'JetBrains Mono',monospace">${ints}</td><td style="font-family:'JetBrains Mono',monospace">${parseFloat(density).toFixed(1)}%</td><td><span class="beh-badge beh-${beh}">${behaviorShort(beh)}</span></td></tr>`;
+  }).join('');
+ } catch(e) { tbody.innerHTML = `<tr><td colspan="5" class="error-placeholder">Failed to load sessions</td></tr>`; }
 }
 
-
-// ── ML INSIGHTS ──
+// ── ML INSIGHTS ──────────────────────────────────────────────
+const mlInsights = [
+ {type:"WARNING",zone:"Zone B",title:"High Hesitation Detected",message:"Zone B (Beverages) has a 46% hesitation rate — highest across all zones. Consider reducing product SKU count or improving shelf signage.",metric:"46% Hesitation Rate"},
+ {type:"INFO",zone:"Zone B",title:"Peak Hesitation Window",message:"Hesitation events are concentrated between 12PM–1PM and 5PM–7PM, coinciding with peak footfall periods.",metric:"12PM–1PM, 5PM–7PM"},
+ {type:"SUCCESS",zone:"Zone C",title:"Best Performing Zone",message:"Zone C (Chocolates) has the highest conversion rate at 57.9%. Shelf arrangement and product visibility appear optimal.",metric:"57.9% Conversion Rate"},
+ {type:"INFO",zone:"All Zones",title:"Improving Trend",message:"Overall hesitation rate has dropped from 41.5% (Day 2) to 30.9% (Day 5), suggesting shelf adjustments are having positive impact.",metric:"↓ 10.6% over 5 days"},
+];
 function renderInsights() {
-  const wrap = document.getElementById('insight-cards-wrap');
-  if (wrap.innerHTML !== '') return;
-  const iconMap = { WARNING:'⚠️', INFO:'ℹ️', SUCCESS:'✅' };
-  const colorMap = { WARNING:'var(--red)', INFO:'var(--blue)', SUCCESS:'var(--green)' };
-  wrap.innerHTML = mlInsights.map(ins=>`
-    <div class="insight-card ${ins.type}">
-      <div class="insight-icon" style="background:rgba(255,255,255,0.05);font-size:22px">${iconMap[ins.type]}</div>
-      <div class="insight-body">
-        <div class="insight-top">
-          <div class="insight-title">${ins.title}</div>
-          <div class="insight-zone-tag">${ins.zone}</div>
-        </div>
-        <div class="insight-msg">${ins.message}</div>
-      </div>
-      <div class="insight-metric" style="color:${colorMap[ins.type]}">${ins.metric}</div>
-    </div>`).join('');
+ const wrap = document.getElementById('insight-cards-wrap'); if(wrap.innerHTML !== '') return;
+ const iconMap = {WARNING:'⚠',INFO:'ℹ',SUCCESS:'✅'}, colorMap = {WARNING:'var(--red)',INFO:'var(--blue)',SUCCESS:'var(--green)'};
+ wrap.innerHTML = mlInsights.map(ins=>`<div class="insight-card ${ins.type}"><div class="insight-icon" style="background:rgba(255,255,255,0.05);font-size:22px">${iconMap[ins.type]}</div><div class="insight-body"><div class="insight-top"><div class="insight-title">${ins.title}</div><div class="insight-zone-tag">${ins.zone}</div></div><div class="insight-msg">${ins.message}</div></div><div class="insight-metric" style="color:${colorMap[ins.type]}">${ins.metric}</div></div>`).join('');
 }
 
-// ── BILLING PAGE ──
-let dailyConvChart=null, gapChart=null;
+// ════════════════════════════════════════════════════════════
+// BILLING CORRELATION PAGE — Full API-driven implementation
+// ════════════════════════════════════════════════════════════
+let dailyConvChart = null, gapChart = null, hourlyBillChart = null;
+let billingPageLoaded = false;
+
 function initBillingPage() {
-  setTimeout(()=>{
-    if(!dailyConvChart){
-      const ctx = document.getElementById('daily-conv-chart').getContext('2d');
-      dailyConvChart = new Chart(ctx,{
-        type:'line',
-        data:{
-          labels:trendData.map(d=>d.day),
-          datasets:[{label:'Purchases',data:[33,38,48,46,59],borderColor:'#10b981',backgroundColor:'rgba(16,185,129,0.1)',tension:0.4,pointBackgroundColor:'#10b981',pointRadius:5,fill:true}]
-        },
-        options:{responsive:true,maintainAspectRatio:false,...chartDefaults,plugins:{...chartDefaults.plugins,tooltip:{backgroundColor:'#1e2a3a',titleColor:'#f9fafb',bodyColor:'#9ca3af'}}}
-      });
-    }
-    if(!gapChart){
-      const ctx2 = document.getElementById('gap-chart').getContext('2d');
-      gapChart = new Chart(ctx2,{
-        type:'bar',
-        data:{
-          labels:['Zone A','Zone B','Zone C'],
-          datasets:[
-            {label:'Total Interactions',data:[38,52,30],backgroundColor:'rgba(59,130,246,0.7)',borderRadius:4},
-            {label:'Purchases',data:[19,18,22],backgroundColor:'rgba(16,185,129,0.7)',borderRadius:4},
-          ]
-        },
-        options:{responsive:true,maintainAspectRatio:false,...chartDefaults,plugins:{...chartDefaults.plugins,tooltip:{backgroundColor:'#1e2a3a',titleColor:'#f9fafb',bodyColor:'#9ca3af'}}}
-      });
-    }
-  },50);
+ // Only fetch once per session; re-use data on re-navigation
+ if (billingPageLoaded) return;
+
+ fetch(`${API_BASE}/billing`)
+  .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
+  .then(data => {
+   billingPageLoaded = true;
+
+   // Update correlation window badge
+   if (data.correlationWindowMin) {
+    document.getElementById('corr-window-badge').textContent = `⏱ ${data.correlationWindowMin}-min correlation window`;
+   }
+
+   // Render each section
+   if (data.funnel)              renderBillingFunnel(data.funnel);
+   if (data.zoneStats)           renderBillingZoneTable(data.zoneStats);
+   if (data.zoneStats)           renderTopProducts(data.zoneStats);
+   if (data.zoneStats)           renderBehaviorBreakdown(data.zoneStats);
+   if (data.dailyTrend)          renderDailyTrendChart(data.dailyTrend);
+   if (data.zoneStats)           renderGapChart(data.zoneStats);
+   if (data.hourlyDistribution)  renderHourlyBillChart(data.hourlyDistribution);
+  })
+  .catch(err => {
+   console.warn('Billing API failed, rendering fallback:', err);
+   renderBillingFallback();
+  });
 }
+
+// ── Funnel ───────────────────────────────────────────────────
+function renderBillingFunnel(funnel) {
+ const intRate  = funnel.interactionRate  || 0;
+ const convRate = funnel.conversionRate   || 0;
+ const revenue  = funnel.totalRevenue     || 0;
+
+ // Update KPI cards
+ document.getElementById('bkpi-presence').textContent     = funnel.presenceCount    || 0;
+ document.getElementById('bkpi-interactions').textContent  = funnel.interactionCount || 0;
+ document.getElementById('bkpi-int-rate').textContent      = `${intRate}% of presences`;
+ document.getElementById('bkpi-conversions').textContent   = funnel.conversionCount  || 0;
+ document.getElementById('bkpi-conv-rate').textContent     = `${convRate}% conversion`;
+ document.getElementById('bkpi-revenue').textContent       = `Rs. ${revenue.toLocaleString('en-IN', {minimumFractionDigits:2, maximumFractionDigits:2})}`;
+
+ // Render funnel visual
+ document.getElementById('funnel-wrap').innerHTML = `
+  <div class="funnel-wrap">
+   <div class="funnel-stage" style="width:100%;height:80px;background:rgba(0,212,255,0.18);border-radius:6px;margin-bottom:4px">
+    <div class="funnel-label" style="color:var(--cyan)">Presence Detected</div>
+    <div class="funnel-val">${funnel.presenceCount}</div>
+    <div class="funnel-pct">100% baseline</div>
+   </div>
+   <div class="funnel-arrow">▼ ${intRate}% proceed to interaction</div>
+   <div class="funnel-stage" style="width:${Math.max(intRate,20)}%;height:80px;background:rgba(59,130,246,0.22);border-radius:6px;margin-bottom:4px">
+    <div class="funnel-label" style="color:var(--blue)">Active Interaction</div>
+    <div class="funnel-val">${funnel.interactionCount}</div>
+    <div class="funnel-pct">${intRate}% of presence</div>
+   </div>
+   <div class="funnel-arrow">▼ ${convRate}% complete purchase</div>
+   <div class="funnel-stage" style="width:${Math.max(convRate,15)}%;height:80px;background:rgba(16,185,129,0.24);border-radius:6px">
+    <div class="funnel-label" style="color:var(--green)">Purchase Completed</div>
+    <div class="funnel-val">${funnel.conversionCount}</div>
+    <div class="funnel-pct">${convRate}% of presence</div>
+   </div>
+  </div>`;
+}
+
+// ── Zone Conversion Table ────────────────────────────────────
+function renderBillingZoneTable(zoneStats) {
+ const catMap = {ZONE_A:'Snacks',ZONE_B:'Beverages',ZONE_C:'Chocolates'};
+ const tbody = document.getElementById('billing-zone-table');
+ if (!tbody) return;
+
+ tbody.innerHTML = zoneStats.map(z => {
+  const label = z.zoneId.replace('ZONE_','');
+  const cat   = catMap[z.zoneId] || '';
+  const intRate  = z.totalSessions > 0 ? Math.round(z.totalPurchases / z.totalSessions * 100) : 0; // reuse from sessions→purchases ratio as proxy interaction rate isn't in zone_stats directly
+  // Compute interaction rate from zoneData if available
+  const intRateDisplay = z.interactionRate !== undefined ? z.interactionRate : intRate;
+  const crClass  = z.conversionRate >= 40 ? 'rate-ok' : z.conversionRate >= 25 ? 'rate-mid' : 'rate-high';
+  const revenue  = (z.totalRevenue||0).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});
+  const aov      = (z.avgOrderValue||0).toFixed(2);
+  return `
+   <tr>
+    <td><span style="color:var(--cyan);font-family:'JetBrains Mono',monospace">Zone ${label} — ${cat}</span></td>
+    <td style="font-family:'JetBrains Mono',monospace">${z.totalSessions}</td>
+    <td style="font-family:'JetBrains Mono',monospace">${z.totalSessions}</td>
+    <td style="font-family:'JetBrains Mono',monospace">${z.totalPurchases}</td>
+    <td><span style="font-family:'JetBrains Mono',monospace;color:var(--cyan)">Rs. ${revenue}</span></td>
+    <td><span style="font-family:'JetBrains Mono',monospace;color:var(--text2)">Rs. ${aov}</span></td>
+    <td><span class="rate-val rate-ok">${intRateDisplay}%</span></td>
+    <td><span class="rate-val ${crClass}">${z.conversionRate}%</span></td>
+   </tr>`;
+ }).join('');
+}
+
+// ── Top Products ─────────────────────────────────────────────
+function renderTopProducts(zoneStats) {
+ const catMap  = {ZONE_A:'Snacks',ZONE_B:'Beverages',ZONE_C:'Chocolates'};
+ const colorMap = {ZONE_A:'var(--cyan)',ZONE_B:'var(--amber)',ZONE_C:'var(--green)'};
+ const wrap = document.getElementById('top-products-wrap');
+ if (!wrap) return;
+
+ wrap.innerHTML = zoneStats.map(z => {
+  const label   = z.zoneId.replace('ZONE_','');
+  const cat     = catMap[z.zoneId] || '';
+  const color   = colorMap[z.zoneId] || 'var(--text2)';
+  const products = z.topProducts || [];
+  const pills = products.length > 0
+   ? products.map(p => `<span class="product-pill"><span class="pill-count">${p.units}×</span>${p.name}</span>`).join('')
+   : `<span style="font-size:11px;color:var(--text3)">No purchase data yet</span>`;
+
+  return `
+   <div style="margin-bottom:16px">
+    <div style="font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;color:${color};margin-bottom:8px">Zone ${label} — ${cat}</div>
+    <div>${pills}</div>
+   </div>`;
+ }).join('');
+}
+
+// ── Behavior → Conversion Breakdown ─────────────────────────
+function renderBehaviorBreakdown(zoneStats) {
+ const wrap = document.getElementById('behavior-breakdown-wrap');
+ if (!wrap) return;
+
+ // Aggregate behavior conversion across all zones
+ const aggregate = {};
+ zoneStats.forEach(z => {
+  (z.behaviorBreakdown || []).forEach(b => {
+   if (!aggregate[b.behavior]) aggregate[b.behavior] = {total:0,converted:0};
+   aggregate[b.behavior].total     += b.total;
+   aggregate[b.behavior].converted += b.converted;
+  });
+ });
+
+ const behOrder = ['FOCUSED_INTEREST','PROBABLE_HESITATION','EXPLORATORY_BROWSING','SUCCESSFUL_CONVERSION','PRESENCE_ONLY','UNDETERMINED'];
+ const colorBeh = {FOCUSED_INTEREST:'#3b82f6',PROBABLE_HESITATION:'#f59e0b',EXPLORATORY_BROWSING:'#6366f1',SUCCESSFUL_CONVERSION:'#10b981',PRESENCE_ONLY:'#6b7280',UNDETERMINED:'#4b5563'};
+
+ const rows = behOrder
+  .filter(b => aggregate[b] && aggregate[b].total > 0)
+  .map(b => {
+   const d    = aggregate[b];
+   const rate = d.total > 0 ? Math.round(d.converted / d.total * 100) : 0;
+   const color = colorBeh[b] || '#9ca3af';
+   return `
+    <div class="beh-conv-row">
+     <span class="beh-badge beh-${b}" style="min-width:155px;text-align:center">${behaviorShort(b)}</span>
+     <div class="beh-conv-bar-wrap">
+      <div class="beh-conv-bar-bg"><div class="beh-conv-bar-fill" style="width:${rate}%;background:${color}"></div></div>
+      <div style="font-size:10px;color:var(--text3);margin-top:3px">${d.converted} of ${d.total} converted</div>
+     </div>
+     <span class="beh-conv-rate" style="color:${color}">${rate}%</span>
+    </div>`;
+  });
+
+ wrap.innerHTML = rows.length > 0
+  ? rows.join('')
+  : `<div class="loading-placeholder">No behavior data available yet</div>`;
+}
+
+// ── Daily Trend Chart ────────────────────────────────────────
+function renderDailyTrendChart(dailyTrend) {
+ if (!dailyTrend || dailyTrend.length === 0) return;
+ setTimeout(() => {
+  if (dailyConvChart) { dailyConvChart.destroy(); dailyConvChart = null; }
+  const ctx = document.getElementById('daily-conv-chart');
+  if (!ctx) return;
+  dailyConvChart = new Chart(ctx.getContext('2d'), {
+   type: 'bar',
+   data: {
+    labels: dailyTrend.map(d => d.day),
+    datasets: [
+     { label: 'Purchases', data: dailyTrend.map(d => d.purchases), backgroundColor: 'rgba(16,185,129,0.7)', borderRadius: 4, yAxisID: 'y' },
+     { label: 'Revenue (Rs.)', data: dailyTrend.map(d => d.revenue), type: 'line', borderColor: '#00d4ff', backgroundColor: 'rgba(0,212,255,0.08)', tension: 0.4, pointBackgroundColor: '#00d4ff', pointRadius: 4, fill: true, yAxisID: 'y1' }
+    ]
+   },
+   options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { ...chartDefaults.plugins, tooltip: { backgroundColor:'#1e2a3a', titleColor:'#f9fafb', bodyColor:'#9ca3af' } },
+    scales: {
+     x: chartDefaults.scales.x,
+     y:  { ...chartDefaults.scales.y, position: 'left',  title: { display:true, text:'Purchases', color:'#10b981', font:{size:10} } },
+     y1: { ...chartDefaults.scales.y, position: 'right', title: { display:true, text:'Revenue (Rs.)', color:'#00d4ff', font:{size:10} }, grid: { drawOnChartArea:false } }
+    }
+   }
+  });
+ }, 50);
+}
+
+// ── Gap Chart (Interactions vs Purchases by Zone) ────────────
+function renderGapChart(zoneStats) {
+ if (!zoneStats || zoneStats.length === 0) return;
+ setTimeout(() => {
+  if (gapChart) { gapChart.destroy(); gapChart = null; }
+  const ctx = document.getElementById('gap-chart');
+  if (!ctx) return;
+  const labels   = zoneStats.map(z => 'Zone ' + z.zoneId.replace('ZONE_',''));
+  const sessions  = zoneStats.map(z => z.totalSessions);
+  const purchases = zoneStats.map(z => z.totalPurchases);
+  const correlated = zoneStats.map(z => z.correlatedConversions || 0);
+  gapChart = new Chart(ctx.getContext('2d'), {
+   type: 'bar',
+   data: {
+    labels,
+    datasets: [
+     { label: 'Total Sessions',        data: sessions,    backgroundColor: 'rgba(59,130,246,0.6)',  borderRadius: 4 },
+     { label: 'Billing Purchases',     data: purchases,   backgroundColor: 'rgba(245,158,11,0.6)', borderRadius: 4 },
+     { label: 'Correlated Conversions',data: correlated,  backgroundColor: 'rgba(16,185,129,0.8)', borderRadius: 4 }
+    ]
+   },
+   options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { ...chartDefaults.plugins, tooltip: { backgroundColor:'#1e2a3a', titleColor:'#f9fafb', bodyColor:'#9ca3af' } },
+    scales: chartDefaults.scales
+   }
+  });
+ }, 50);
+}
+
+// ── Hourly Purchase Distribution Chart ───────────────────────
+function renderHourlyBillChart(hourlyDist) {
+ if (!hourlyDist || hourlyDist.length === 0) return;
+ setTimeout(() => {
+  if (hourlyBillChart) { hourlyBillChart.destroy(); hourlyBillChart = null; }
+  const ctx = document.getElementById('hourly-bill-chart');
+  if (!ctx) return;
+  hourlyBillChart = new Chart(ctx.getContext('2d'), {
+   type: 'bar',
+   data: {
+    labels: hourlyDist.map(d => d.hour),
+    datasets: [{
+     label: 'Purchases',
+     data:  hourlyDist.map(d => d.purchases),
+     backgroundColor: hourlyDist.map(d => {
+      const h = parseInt(d.hour); // peak hours get brighter color
+      return (h >= 12 && h <= 14) || (h >= 17 && h <= 19) ? 'rgba(0,212,255,0.8)' : 'rgba(0,212,255,0.35)';
+     }),
+     borderRadius: 4
+    }]
+   },
+   options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { ...chartDefaults.plugins, legend:{display:false}, tooltip:{ backgroundColor:'#1e2a3a', titleColor:'#f9fafb', bodyColor:'#9ca3af', callbacks:{ title: items => `${items[0].label}`, label: item => ` ${item.raw} purchases` } } },
+    scales: chartDefaults.scales
+   }
+  });
+ }, 50);
+}
+
+// ── Fallback (if API is unreachable) ────────────────────────
+function renderBillingFallback() {
+ // KPIs
+ document.getElementById('bkpi-presence').textContent    = '148';
+ document.getElementById('bkpi-interactions').textContent = '112';
+ document.getElementById('bkpi-int-rate').textContent     = '75.7% of presences';
+ document.getElementById('bkpi-conversions').textContent  = '59';
+ document.getElementById('bkpi-conv-rate').textContent    = '39.9% conversion';
+ document.getElementById('bkpi-revenue').textContent      = 'Rs. —';
+
+ // Funnel
+ renderBillingFunnel({presenceCount:148,interactionCount:112,conversionCount:59,interactionRate:75.7,conversionRate:39.9,totalRevenue:0});
+
+ // Static zone table
+ const tbody = document.getElementById('billing-zone-table');
+ if (tbody) tbody.innerHTML = `
+  <tr><td><span style="color:var(--cyan);font-family:'JetBrains Mono',monospace">Zone A — Snacks</span></td><td>47</td><td>47</td><td>19</td><td>—</td><td>—</td><td><span class="rate-val rate-ok">80.9%</span></td><td><span class="rate-val rate-ok">40.4%</span></td></tr>
+  <tr><td><span style="color:var(--cyan);font-family:'JetBrains Mono',monospace">Zone B — Beverages</span></td><td>63</td><td>63</td><td>18</td><td>—</td><td>—</td><td><span class="rate-val rate-ok">82.5%</span></td><td><span class="rate-val rate-high">28.6%</span></td></tr>
+  <tr><td><span style="color:var(--cyan);font-family:'JetBrains Mono',monospace">Zone C — Chocolates</span></td><td>38</td><td>38</td><td>22</td><td>—</td><td>—</td><td><span class="rate-val rate-ok">78.9%</span></td><td><span class="rate-val rate-ok">57.9%</span></td></tr>`;
+
+ document.getElementById('top-products-wrap').innerHTML      = `<div class="loading-placeholder">API unavailable — connect to load product data</div>`;
+ document.getElementById('behavior-breakdown-wrap').innerHTML = `<div class="loading-placeholder">API unavailable — connect to load breakdown</div>`;
+
+ // Fallback charts
+ renderDailyTrendChart([{day:'Day 1',purchases:33,revenue:0},{day:'Day 2',purchases:38,revenue:0},{day:'Day 3',purchases:48,revenue:0},{day:'Day 4',purchases:46,revenue:0},{day:'Day 5',purchases:59,revenue:0}]);
+ renderGapChart([{zoneId:'ZONE_A',totalSessions:47,totalPurchases:19,correlatedConversions:19},{zoneId:'ZONE_B',totalSessions:63,totalPurchases:18,correlatedConversions:18},{zoneId:'ZONE_C',totalSessions:38,totalPurchases:22,correlatedConversions:22}]);
+}
+
 </script>
 </body>
 </html>
